@@ -1,0 +1,23 @@
+[tool.poetry]
+name = "folderistic"
+version = "0.1.0"
+description = ""
+authors = ["timelessnesses <timelessnesses@timelessnesses.me>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+uvicorn = "^0.27.1"
+fastapi = "^0.109.2"
+python-multipart = "^0.0.9"
+orjson = "^3.9.14"
+nicegui = "^1.4.15"
+asyncpg = "^0.29.0"
+bcrypt = "^4.1.2"
+python-dotenv = "^1.0.1"
+asyncpg-stubs = "^0.29.1"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
