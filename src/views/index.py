@@ -4,8 +4,8 @@ import uuid
 import asyncpg
 from nicegui import app, ui
 
-from .utils import show_menu
-
+from .utils import show_menu, show_header, CustomButtonBuilder
+from ..models import UserRecord, FolderRecord
 
 def install(db: asyncpg.Pool):
     @ui.page("/")
@@ -19,8 +19,9 @@ def install(db: asyncpg.Pool):
                     role = await db.fetch(
                         "SELECT roles FROM users WHERE session = $1",
                         str(app.storage.user.get("authenticator")),
+                        record_class=UserRecord
                     )
-                    if role[0]["roles"] != "admin":
+                    if role[0].roles != "admin":
                         ui.notify(
                             "You are NOT an Administrator. Please contact your administrator for creating new folders.",
                             type="negative",
@@ -32,53 +33,47 @@ def install(db: asyncpg.Pool):
                         [],
                         str(uuid.uuid4()),
                     )
-                    ui.notify("Refreshing in 2 seconds", type="info")
+                    ui.notify("Refreshing in 2 seconds", type="ongoing")
                     await asyncio.sleep(2)
                     ui.open("/")
 
                 ui.button("Submit", on_click=create_new_folder)
             return dialog.open
-
-        left_drawer = (
-            ui.drawer("left")
-            .classes("items-center")
-            .style("background-color: whitesmoke")
-        )
-        with ui.header(elevated=True).classes("items-center justify-between"):
-            ui.button(on_click=await show_menu(left_drawer, db)).props(
-                "flat color=white icon=menu"
-            )
-            ui.label("Folderistic - Listing")
-            ui.button(on_click=popup_thigmajig()).props(
-                "flat color=white icon=create_new_folder"
-            )
-            # d: asyncpg.Connection
-            async with db.acquire() as d:
-                name = await d.fetch(
-                    "SELECT username FROM users WHERE session = $1",
-                    str(app.storage.user.get("authenticator", "")),
-                )
-                if len(name) == 0:
-                    return
-            ui.notify(f"Welcome {name[0]['username']}!")
+        await show_header(db, "Listing",[
+            CustomButtonBuilder(popup_thigmajig()).props("flat color=white icon=create_new_folder")
+        ])
             # ui.separator()
         with ui.row(wrap=True).classes("items-start justify-center gap-10 m-4"):
             async with db.acquire() as d:
-                if x := await db.fetch(
+                x: list[UserRecord] = await db.fetch(
                     "SELECT roles FROM users WHERE session = $1",
                     str(app.storage.user.get("authenticator")),
-                ):
-                    if x[0]["roles"] == "admin":
-                        x = await d.fetch("SELECT * FROM folders")
+                    record_class=UserRecord
+                )
+                if x:
+                    if x[0].roles == "admin":
+                        a = await d.fetch("SELECT * FROM folders", record_class=FolderRecord)
                     else:
-                        x = await d.fetch(
+                        a = await d.fetch(
                             "SELECT * FROM folders WHERE (SELECT username FROM users WHERE session = $1) = ANY(accessers);",
                             str(app.storage.user.get("autheticator")),
+                            record_class=FolderRecord
                         )
-                for f in x:
+                else:
+                    raise Exception("???")
+                for f in a:
+                    print(f)
                     with ui.column().classes("w-auto h-auto"):
-                        with ui.button(on_click=lambda: ui.open(f"/{f['id']}")).classes(
+                        j = f.id
+                        print(j)
+                        
+                        # Define the on_click function with a default argument to capture the current value of `j`
+                        def v(j=j):  # This captures the current value of `j` for each iteration
+                            print(j)
+                            ui.open(j)
+                            
+                        with ui.button(on_click=v).classes(
                             "flex flex-col items-center justify-center"
                         ):
                             ui.icon("folder", size="md", color="darkorange")
-                            ui.label(f'{f["name"]} (ID: {f["id"]})')
+                            ui.label(f'{f.name} (ID: {f.id})')

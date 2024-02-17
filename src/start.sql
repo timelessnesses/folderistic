@@ -9,4 +9,10 @@ CREATE TABLE IF NOT EXISTS folders(
     name TEXT,
     accessers TEXT ARRAY,
     id TEXT
+);
+CREATE TABLE IF NOT EXISTS files(
+    folder TEXT,
+    id TEXT,
+    last_updated TIMESTAMP,
+    path TEXT
 )

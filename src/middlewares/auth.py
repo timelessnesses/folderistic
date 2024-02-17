@@ -13,14 +13,17 @@ from nicegui import Client, app
 
 # db: asyncpg.Pool
 
+db = None # type: ignore
 
 class AuthMiddleWare(starlette.middleware.base.BaseHTTPMiddleware):
     initialized_db = False
     db: asyncpg.Connection
 
     async def get_db(self):
-        if not self.initialized_db:
+        global db
+        if not self.initialized_db or db is None:
             self.db = await asyncpg.connect(host=os.getenv("FOLDERISTIC_HOST"), user=os.getenv("FOLDERISTIC_USER"), password=os.getenv("FOLDERISTIC_PASS"), database=os.getenv("FOLDERISTIC_DB"))  # type: ignore
+            db = self.db
         self.initialized_db = True
 
     async def dispatch(self, request: fastapi.Request, call_next) -> fastapi.Response:
@@ -37,6 +40,8 @@ class AuthMiddleWare(starlette.middleware.base.BaseHTTPMiddleware):
         # d: asyncpg.Connection
         tries = 0
         e = None
+        global db
+        x = db or self.db
         while tries <= 5:
             try:
                 if app.storage.user.get("authenticated", False):
