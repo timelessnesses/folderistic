@@ -16,7 +16,8 @@ async def add():
         await d.execute(
             """
             DELETE FROM users WHERE username = $1
-            """, user
+            """,
+            user,
         )
     print("Done!")
 

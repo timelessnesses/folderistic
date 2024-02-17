@@ -12,9 +12,12 @@ async def add():
     assert db != None, "Pool returns None?"
     print("Connected to database")
     user = input("Username: ")
-    await db.execute("""
+    await db.execute(
+        """
     DELETE FROM authenticated WHERE username = $1
-                     """, user)
+                     """,
+        user,
+    )
     print("Done!")
 
 

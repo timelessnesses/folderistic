@@ -13,7 +13,7 @@ async def add():
     print("Connected to database")
     user = input("Username: ")
     password = input("Password: ")
-    roles = input("Roles: ")    
+    roles = input("Roles: ")
     if roles.lower() not in ["admin", "uploaders", "viewers"]:
         assert False, "Role is not supported"
     salt = bcrypt.gensalt()
@@ -27,7 +27,7 @@ async def add():
             user,
             salted_password.hex(),
             salt.hex(),
-            roles
+            roles,
         )
     print("Done!")
 
