@@ -1,7 +1,10 @@
 import asyncio
+
 from dotenv import load_dotenv
+
 load_dotenv()
 import os
+
 import asyncpg
 import fastapi
 import starlette.middleware.base
@@ -14,6 +17,7 @@ from nicegui import Client, app
 class AuthMiddleWare(starlette.middleware.base.BaseHTTPMiddleware):
     initialized_db = False
     db: asyncpg.Connection
+
     async def get_db(self):
         if not self.initialized_db:
             self.db = await asyncpg.connect(host=os.getenv("FOLDERISTIC_HOST"), user=os.getenv("FOLDERISTIC_USER"), password=os.getenv("FOLDERISTIC_PASS"), database=os.getenv("FOLDERISTIC_DB"))  # type: ignore

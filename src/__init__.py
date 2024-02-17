@@ -1,13 +1,12 @@
 import asyncio
-
 # import contextlib
 # import typing
 import uuid
 
 import asyncpg
 import fastapi
-from nicegui import ui, app
 from dotenv import load_dotenv
+from nicegui import app, ui
 
 load_dotenv()
 import logging
@@ -16,7 +15,8 @@ import os
 from .middlewares import install_middlewares
 from .views import install
 
-db: asyncpg.Pool = None #type: ignore
+db: asyncpg.Pool = None  # type: ignore
+
 
 @app.on_startup
 async def ls():
@@ -29,15 +29,17 @@ async def ls():
     g.info("Connected to database")
     print("hi")
     with open("./src/start.sql") as s:
-        await db.execute(s.read()) # type: ignore
+        await db.execute(s.read())  # type: ignore
         g.info("Executed starter statements")
+
 
 @app.on_shutdown
 async def die():
     await db.close()
-    
+
+
 install_middlewares(app)
-    
+
 try:
     with open("./SECRET.uuid4") as fp:
         secret = fp.read()
@@ -47,4 +49,6 @@ except FileNotFoundError:
         fp.write(secret)
 print(secret)
 app.add_middleware(middlewares.auth.AuthMiddleWare)
-ui.run_with(app=fastapi.FastAPI(),title="Folderistic", dark=None, storage_secret=secret)
+ui.run_with(
+    app=fastapi.FastAPI(), title="Folderistic", dark=None, storage_secret=secret
+)
