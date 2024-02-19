@@ -76,6 +76,6 @@ class FileRecord(RecordWithGetAttributeIncluded):
 
     name: str
     "File Name"
-    
+
     who: str
     "Which user uploaded this file"
