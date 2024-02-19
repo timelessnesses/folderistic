@@ -47,7 +47,6 @@ except FileNotFoundError:
     secret = str(uuid.uuid4())
     with open("./SECRET.uuid4", "w") as fp:
         fp.write(secret)
-print(secret)
 app.add_middleware(middlewares.auth.AuthMiddleWare)
 ui.run_with(
     app=fastapi.FastAPI(), title="Folderistic", dark=None, storage_secret=secret
