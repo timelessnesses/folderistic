@@ -136,7 +136,7 @@ async def show_header(
         buttons (list[CustomButtonBuilder] | None, optional): Buttons with included props if you wish to add any. Defaults to None.
     """
     left_drawer = (
-        ui.drawer("left").classes("items-center").style("background-color: whitesmoke")
+        ui.drawer("left").classes("items-center").style(f"background-color: whitesmoke")
     )
     with ui.header(elevated=True).classes("items-center justify-between"):
         ui.button(on_click=await show_menu(left_drawer, db)).props(

@@ -15,5 +15,6 @@ CREATE TABLE IF NOT EXISTS files(
     id TEXT,
     last_updated TIMESTAMP,
     path TEXT,
-    name TEXT
+    name TEXT,
+    who TEXT
 )

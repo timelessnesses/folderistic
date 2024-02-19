@@ -17,6 +17,7 @@ bcrypt = "^4.1.2"
 python-dotenv = "^1.0.1"
 asyncpg-stubs = "^0.29.1"
 psutil = "^5.9.8"
+humanize = "^4.9.0"
 
 
 [build-system]

@@ -73,3 +73,9 @@ class FileRecord(RecordWithGetAttributeIncluded):
 
     path: str
     "The file path"
+
+    name: str
+    "File Name"
+    
+    who: str
+    "Which user uploaded this file"

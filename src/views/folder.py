@@ -47,13 +47,15 @@ def install(db: asyncpg.Pool):
                 return await upload_event(u)
             async with db.acquire() as d:
                 ui.notify("Recording file to the database", type="ongoing")
+                user = (await d.fetch("SELECT * FROM users WHERE session = $1", str(app.storage.user.get("authenticator")), record_class=UserRecord))[0]
                 await d.execute(
-                    "INSERT INTO files(folder, id, last_updated, path, name) VALUES ($1, $2, $3, $4, $5)",
+                    "INSERT INTO files(folder, id, last_updated, path, name, who) VALUES ($1, $2, $3, $4, $5, $6)",
                     folder_id,
                     str(file_id),
                     datetime.datetime.now(),
                     f"files/{folder_id}/{file_id}",
                     u.name,
+                    user.username
                 )
                 ui.notify(
                     f"Successfully uploaded your file! ({u.name}) Refreshing in 3 seconds",
