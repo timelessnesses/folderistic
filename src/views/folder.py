@@ -66,7 +66,7 @@ def install(db: asyncpg.Pool):
                 n.dismiss()
 
         async def file_upload_popup():
-            print("i got clicked")
+            # print("i got clicked")
             with ui.dialog(value=True):
                 with ui.card().classes("fixed-center absolute-center"):
                     ui.label(
@@ -117,6 +117,42 @@ def install(db: asyncpg.Pool):
                         "flat color=white icon=file_upload"
                     )
                 )
+            async def add_people():
+                with ui.dialog(value=True), ui.card():
+                    ui.label("Users that have access to this folder (All administrators will have a access to every folder but they may not show up here.)")
+                    with ui.element("q-list").props('bordered separator'):
+                        async with db.acquire() as d:
+                            users = (await d.fetch("SELECT accessers FROM folders WHERE id = $1", folder_id, record_class=FolderRecord))[0]
+                            for user in users.accessers:
+                                with ui.element("q-item"):
+                                    with ui.element('q-item-section'):
+                                        ui.label(user)
+                    async def add_user():
+                        usernames: list[str] = username.value.split(",")
+                        async with db.acquire() as d:
+                            await d.execute("""
+                            UPDATE folders
+                            SET accessers = ARRAY(
+                                SELECT DISTINCT unnest
+                                FROM (
+                                    SELECT unnest(accessers) 
+                                    UNION 
+                                    SELECT unnest($2::text[])
+                                ) s
+                            )
+                            WHERE id = $1;
+                                            """, folder_id, usernames)
+                            ui.notify("Successfully added new users to be able to access this folder!", type="positive")
+                            ui.timer(3, lambda: ui.open(f"/folder/{folder_id}"))
+                    async with db.acquire() as d:
+                        users = await d.fetch("SELECT username FROM users", record_class=UserRecord)
+                    username = ui.input("Input your username here splitting by commas", autocomplete=[x.username for x in users])
+                    ui.button("Submit",on_click=add_user)
+                        
+            if role[0].roles == "admin":
+                buttons.append(
+                    CustomButtonBuilder(on_click=add_people).props("flat color=white icon=person_add")
+                )
             async def zip_files_then_download():
                 notification = ui.notification(timeout=None)
                 notification.spinner = True
@@ -159,16 +195,16 @@ def install(db: asyncpg.Pool):
             )
             with ui.row(wrap=True).classes("items-start justify-center gap-10 m-4"):
                 for f in files:
-                    print(f)
+                    # print(f)
                     with ui.column().classes("w-auto h-auto"):
                         j = f.id
-                        print(j)
+                        # print(j)
 
                         # Define the on_click function with a default argument to capture the current value of `j`
                         def v(
                             j=j,
                         ):  # This captures the current value of `j` for each iteration
-                            print(j)
+                            # print(j)
                             ui.open(f"/folder/{folder_id}/{j}")
 
                         with ui.button(on_click=v).classes(

@@ -73,16 +73,15 @@ def install(db: asyncpg.Pool):
                 else:
                     raise Exception("???")
                 for f in a:
-                    print(f)
+                    # print(f)
                     with ui.column().classes("w-auto h-auto"):
                         j = f.id
-                        print(j)
+                        # print(j)
 
-                        # Define the on_click function with a default argument to capture the current value of `j`
                         def v(
                             j=j,
-                        ):  # This captures the current value of `j` for each iteration
-                            print(j)
+                        ):
+                            # print(j)
                             ui.open(f"/folder/{j}")
 
                         with ui.button(on_click=v).classes(
