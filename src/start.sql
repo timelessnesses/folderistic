@@ -14,5 +14,6 @@ CREATE TABLE IF NOT EXISTS files(
     folder TEXT,
     id TEXT,
     last_updated TIMESTAMP,
-    path TEXT
+    path TEXT,
+    name TEXT
 )

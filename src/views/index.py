@@ -4,8 +4,9 @@ import uuid
 import asyncpg
 from nicegui import app, ui
 
-from .utils import show_menu, show_header, CustomButtonBuilder
-from ..models import UserRecord, FolderRecord
+from ..models import FolderRecord, UserRecord
+from .utils import CustomButtonBuilder, show_header, show_menu
+
 
 def install(db: asyncpg.Pool):
     @ui.page("/")
@@ -19,7 +20,7 @@ def install(db: asyncpg.Pool):
                     role = await db.fetch(
                         "SELECT roles FROM users WHERE session = $1",
                         str(app.storage.user.get("authenticator")),
-                        record_class=UserRecord
+                        record_class=UserRecord,
                     )
                     if role[0].roles != "admin":
                         ui.notify(
@@ -39,25 +40,34 @@ def install(db: asyncpg.Pool):
 
                 ui.button("Submit", on_click=create_new_folder)
             return dialog.open
-        await show_header(db, "Listing",[
-            CustomButtonBuilder(popup_thigmajig()).props("flat color=white icon=create_new_folder")
-        ])
-            # ui.separator()
+
+        await show_header(
+            db,
+            "Listing",
+            [
+                CustomButtonBuilder(popup_thigmajig()).props(
+                    "flat color=white icon=create_new_folder"
+                )
+            ],
+        )
+        # ui.separator()
         with ui.row(wrap=True).classes("items-start justify-center gap-10 m-4"):
             async with db.acquire() as d:
                 x: list[UserRecord] = await db.fetch(
                     "SELECT roles FROM users WHERE session = $1",
                     str(app.storage.user.get("authenticator")),
-                    record_class=UserRecord
+                    record_class=UserRecord,
                 )
                 if x:
                     if x[0].roles == "admin":
-                        a = await d.fetch("SELECT * FROM folders", record_class=FolderRecord)
+                        a = await d.fetch(
+                            "SELECT * FROM folders", record_class=FolderRecord
+                        )
                     else:
                         a = await d.fetch(
                             "SELECT * FROM folders WHERE (SELECT username FROM users WHERE session = $1) = ANY(accessers);",
                             str(app.storage.user.get("autheticator")),
-                            record_class=FolderRecord
+                            record_class=FolderRecord,
                         )
                 else:
                     raise Exception("???")
@@ -66,14 +76,16 @@ def install(db: asyncpg.Pool):
                     with ui.column().classes("w-auto h-auto"):
                         j = f.id
                         print(j)
-                        
+
                         # Define the on_click function with a default argument to capture the current value of `j`
-                        def v(j=j):  # This captures the current value of `j` for each iteration
+                        def v(
+                            j=j,
+                        ):  # This captures the current value of `j` for each iteration
                             print(j)
-                            ui.open(j)
-                            
+                            ui.open(f"/folder/{j}")
+
                         with ui.button(on_click=v).classes(
                             "flex flex-col items-center justify-center"
                         ):
                             ui.icon("folder", size="md", color="darkorange")
-                            ui.label(f'{f.name} (ID: {f.id})')
+                            ui.label(f"{f.name} (ID: {f.id})")

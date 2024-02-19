@@ -1,62 +1,119 @@
 import asyncio
+import datetime
+import os
+import time
+import typing
 
 import asyncpg
+import psutil
 from nicegui import app, ui
-import typing
+
 from ..models import UserRecord
+
 
 class CustomButtonBuilder:
     """
     A custom button builder to be used in functions.
     """
-    
+
     on_click: typing.Callable[..., typing.Any]
     "On click function"
-    
+
     prop: str
     "Props"
-    
+
     def __init__(self, on_click: typing.Callable[..., typing.Any]) -> None:
         self.on_click = on_click
+
     def props(self, props: str) -> typing.Self:
         "Apply props to button"
         self.prop = props
         return self
 
-async def show_menu(l: ui.drawer, db: asyncpg.Pool):
+
+start = datetime.datetime.now()
+
+
+async def db_ping(db: asyncpg.Pool):
+    async with db.acquire() as d:
+        start = time.time()
+        await d.fetch("SELECT 1;")
+        stop = time.time()
+    return stop - start
+
+
+def cpu():
+    return round(psutil.cpu_percent(), 2)
+
+
+def disk():
+    return round(psutil.disk_usage("/").percent, 2)
+
+
+async def show_menu(l: ui.drawer, db: asyncpg.Pool | None):
     """Showing menu in header
 
     Args:
         l (ui.drawer): A drawer
-        db (asyncpg.Pool): Database
+        db (asyncpg.Pool | None, optional): Database
     """
-    async def logout():
-        async with db.acquire() as d:
-            name = await d.fetch(
-                "SELECT username FROM users WHERE session = $1",
-                str(app.storage.user.get("authenticator", "")),
-                record_class=UserRecord
-            )
-            if len(name) != 0:
-                ui.notify(f"See you again! {name[0].username}")
-                await asyncio.sleep(3)
-        app.storage.user["authenticated"] = False
-        app.storage.user["authenticator"] = None
-        ui.open("/login")
+    if db is not None:
+
+        async def logout():
+            async with db.acquire() as d:
+                name = await d.fetch(
+                    "SELECT username FROM users WHERE session = $1",
+                    str(app.storage.user.get("authenticator", "")),
+                    record_class=UserRecord,
+                )
+                if len(name) != 0:
+                    ui.notify(f"See you again! {name[0].username}")
+                    await asyncio.sleep(3)
+            app.storage.user["authenticated"] = False
+            app.storage.user["authenticator"] = None
+            ui.open("/login")
+
+    else:
+
+        async def logout(): ...
 
     with l:
-        ui.label("📂 Folderistic").style("font-size: 25px")
-        if app.storage.user.get("authenticated", None):
+        ui.link("📂 Folderistic").style("font-size: 25px").on(
+            "click", lambda: ui.open("/")
+        )
+        if app.storage.user.get("authenticated", None) and db is not None:
+
+            async def s():
+                a.set_text(
+                    f"Database Latency: {(await db_ping(db)) * 1000:.2f} milliseconds"
+                )
+
             x = await db.fetch(
                 "SELECT username, roles FROM users WHERE session = $1",
                 str(app.storage.user.get("authenticator")),
-                record_class=UserRecord
+                record_class=UserRecord,
             )
             username = x[0].username
             role: str = x[0].roles
             ui.label(f"User: {username} Role: {role.capitalize()}").style(
                 "font-size: 15px"
             )
+
+            async def set_stuff():
+                a.set_text(
+                    f"Database Latency: {(await db_ping(db)) * 1000:.2f} milliseconds"
+                )
+                b.set_text(f"CPU: {cpu()}%")
+                c.set_text(f"Disk: {disk()}%")
+                d.set_text(
+                    f"Has been running for: {str(datetime.datetime.now() - start).split('.')[0]}"
+                )
+
+            a = ui.label("Database Latency: Unmeasured")
+            b = ui.label("CPU: Unmeasured")
+            c = ui.label("Disk: Unmeasured")
+            d = ui.label("Has been running for: Not Found")
+            ui.timer(1, set_stuff)
             ui.button("Logout", on_click=logout).classes("red")
         else:
             ui.button("Login", on_click=lambda: ui.open("/login"))
@@ -66,35 +123,46 @@ async def show_menu(l: ui.drawer, db: asyncpg.Pool):
 
     return h
 
-async def show_header(db: asyncpg.Pool, header_name: str,buttons: list[CustomButtonBuilder] | None = None):
+
+async def show_header(
+    db: asyncpg.Pool | None,
+    header_name: str,
+    buttons: list[CustomButtonBuilder] | None = None,
+):
     """A function that shows header
 
     Args:
-        db (asyncpg.Pool): Database
+        db (asyncpg.Pool | None, optional): Database
         buttons (list[CustomButtonBuilder] | None, optional): Buttons with included props if you wish to add any. Defaults to None.
     """
     left_drawer = (
-            ui.drawer("left")
-            .classes("items-center")
-            .style("background-color: whitesmoke")
-        )
+        ui.drawer("left").classes("items-center").style("background-color: whitesmoke")
+    )
     with ui.header(elevated=True).classes("items-center justify-between"):
         ui.button(on_click=await show_menu(left_drawer, db)).props(
             "flat color=white icon=menu"
         )
         ui.label(f"Folderistic - {header_name}")
-        if buttons is not None:
+        if buttons is not None and len(buttons) != 0:
             for x in buttons:
                 ui.button(on_click=x.on_click).props(x.prop)
         else:
             ui.label()
         # d: asyncpg.Connection
-        async with db.acquire() as d:
-            name: list[UserRecord] = await d.fetch(
-                "SELECT username FROM users WHERE session = $1",
-                str(app.storage.user.get("authenticator", "")),
-                record_class=UserRecord
-            )
-            if len(name) == 0:
-                return
-        ui.notify(f"Welcome {name[0].username}!")
+
+
+async def say_hi(db: asyncpg.Pool):
+    """Function that says hi to user
+
+    Args:
+        db (asyncpg.Pool): Database
+    """
+    async with db.acquire() as d:
+        name: list[UserRecord] = await d.fetch(
+            "SELECT username FROM users WHERE session = $1",
+            str(app.storage.user.get("authenticator", "")),
+            record_class=UserRecord,
+        )
+        if len(name) == 0:
+            return
+    ui.notify(f"Welcome {name[0].username}!")

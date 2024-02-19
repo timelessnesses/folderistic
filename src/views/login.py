@@ -4,8 +4,9 @@ import asyncpg
 import bcrypt
 from nicegui import app, ui
 
-from .utils import show_menu, show_header
 from ..models import UserRecord
+from .utils import show_header, show_menu
+
 
 def install(db: asyncpg.Pool):
     @ui.page("/login")
@@ -22,7 +23,9 @@ def install(db: asyncpg.Pool):
                 if (
                     len(
                         x := await d.fetch(
-                            "SELECT salt, password FROM users WHERE username = $1", u, record_class=UserRecord
+                            "SELECT salt, password FROM users WHERE username = $1",
+                            u,
+                            record_class=UserRecord,
                         )
                     )
                     == 0
@@ -59,7 +62,7 @@ def install(db: asyncpg.Pool):
                             await d.fetch(
                                 "SELECT * FROM users WHERE session = $1",
                                 app.storage.user.get("authenticator", None),
-                                record_class=UserRecord
+                                record_class=UserRecord,
                             )
                         )
                         != 0

@@ -13,7 +13,8 @@ from nicegui import Client, app
 
 # db: asyncpg.Pool
 
-db = None # type: ignore
+db = None  # type: ignore
+
 
 class AuthMiddleWare(starlette.middleware.base.BaseHTTPMiddleware):
     initialized_db = False
@@ -22,7 +23,7 @@ class AuthMiddleWare(starlette.middleware.base.BaseHTTPMiddleware):
     async def get_db(self):
         global db
         if not self.initialized_db or db is None:
-            self.db = await asyncpg.connect(host=os.getenv("FOLDERISTIC_HOST"), user=os.getenv("FOLDERISTIC_USER"), password=os.getenv("FOLDERISTIC_PASS"), database=os.getenv("FOLDERISTIC_DB"))  # type: ignore
+            self.db = await asyncpg.create_pool(host=os.getenv("FOLDERISTIC_HOST"), user=os.getenv("FOLDERISTIC_USER"), password=os.getenv("FOLDERISTIC_PASS"), database=os.getenv("FOLDERISTIC_DB"))  # type: ignore
             db = self.db
         self.initialized_db = True
 
@@ -31,9 +32,9 @@ class AuthMiddleWare(starlette.middleware.base.BaseHTTPMiddleware):
         if not await self.logged_in():
             if (
                 request.url.path in Client.page_routes.values()
-                and request.url.path not in ["/login"]
+                and request.url.path not in ["/login", "/failed_auth"]
             ):
-                return fastapi.responses.RedirectResponse("/login")
+                return fastapi.responses.RedirectResponse("/failed_auth")
         return await call_next(request)
 
     async def logged_in(self):
