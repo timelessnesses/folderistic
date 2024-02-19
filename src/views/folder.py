@@ -7,6 +7,9 @@ import asyncpg
 import bcrypt
 from nicegui import app, ui
 from nicegui.events import UploadEventArguments
+import zipfile
+import io
+import os
 
 from ..models import FileRecord, FolderRecord, UserRecord
 from .utils import CustomButtonBuilder, show_header, show_menu
@@ -30,23 +33,18 @@ def install(db: asyncpg.Pool):
             except FileExistsError:
                 pass
 
-        async def upload_event(u: UploadEventArguments):
+        async def upload_event(u: UploadEventArguments, n: ui.notification):
             file = u.content
             file_id = uuid.uuid4()
+            n.spinner = True
+            n.message = "Processing"
             try:
-                ui.notify("Saving file to disk", type="ongoing")
                 with open(f"files/{folder_id}/{str(file_id)}", "wb") as fp:
                     fp.write(file.read())
             except Exception:
-                ui.notify(
-                    "Exception: Failed to write file. Creating new folder.",
-                    type="ongoing",
-                )
                 await create_folders(f"files/{folder_id}")
-                ui.notify("Created folder. Processing file again.", type="ongoing")
-                return await upload_event(u)
+                return await upload_event(u,n)
             async with db.acquire() as d:
-                ui.notify("Recording file to the database", type="ongoing")
                 user = (
                     await d.fetch(
                         "SELECT * FROM users WHERE session = $1",
@@ -63,11 +61,9 @@ def install(db: asyncpg.Pool):
                     u.name,
                     user.username,
                 )
-                ui.notify(
-                    f"Successfully uploaded your file! ({u.name}) Refreshing in 3 seconds",
-                    type="positive",
-                )
-                ui.timer(3, lambda: ui.open(f"/folder/{folder_id}"))
+                n.message = f"Successfully uploaded your file! ({u.name}) Please refresh manually"
+                # ui.timer(3, lambda: ui.open(f"/folder/{folder_id}"))
+                n.dismiss()
 
         async def file_upload_popup():
             print("i got clicked")
@@ -76,10 +72,11 @@ def install(db: asyncpg.Pool):
                     ui.label(
                         "Please drag your files to the box under this text or just click on plus sign."
                     )
+                    n = ui.notification(timeout=None, type="positive")
                     ui.upload(
                         multiple=True,
                         label="Drag your files here or click me!",
-                        on_upload=upload_event,
+                        on_upload=lambda u: upload_event(u, n),
                     )
 
         async with db.acquire() as d:
@@ -113,14 +110,50 @@ def install(db: asyncpg.Pool):
                 str(app.storage.user.get("authenticator")),
                 record_class=UserRecord,
             )
+            buttons: list[CustomButtonBuilder] = []
             if role[0].roles in ["admin", "uploaders"]:
-                buttons = [
+                buttons.append(
                     CustomButtonBuilder(on_click=file_upload_popup).props(
                         "flat color=white icon=file_upload"
                     )
-                ]
-            else:
-                buttons = None
+                )
+            async def zip_files_then_download():
+                notification = ui.notification(timeout=None)
+                notification.spinner = True
+                notification.message = "Processing"
+                zipped = io.BytesIO()
+                # notification.message = "Initializing ZipFile In Memory"
+                with zipfile.ZipFile(zipped, "a", zipfile.ZIP_DEFLATED, False) as zipper:
+                    # notification.message = "Getting all files in the folder"
+                    async with db.acquire() as d:
+                        files = await d.fetch("SELECT * from files WHERE folder = $1", folder_id,record_class=FileRecord)
+                    # notification.message = "Successfully got all files"
+                    file_names = []
+                    for file in files:
+                        if file.name in file_names:
+                            name, ext = os.path.splitext(file.name)
+                            file_name = name + str(uuid.uuid4()) + ext
+                        else:
+                            file_name = file.name
+                        with open(file.path, "rb") as fp:
+                            # notification.message = f"Opened {file_name}"
+                            zipper.write(file.path, file_name)
+                            # notification.message = "Wrote to In Memory Zip File"
+                zipped.seek(0)
+                # notification.message = "Seeked back to byte 0"
+                ui.download(zipped.read(), f"{folder[0].name} ({folder[0].id}).zip")
+                notification.message = "Sending download request"
+                notification.spinner = True
+                notification.message = "Enjoy your download!"
+                notification.spinner = False
+                notification.type = "positive"
+                ui.timer(3, notification.dismiss, once=True)
+                    
+            buttons.append(
+                CustomButtonBuilder(on_click=zip_files_then_download).props(
+                    "flat color=white icon=folder_zip"
+                )
+            )
             await show_header(
                 db, f"Listing - Folder {folder[0].name} (ID: {folder[0].id})", buttons
             )

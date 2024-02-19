@@ -5,7 +5,7 @@ import asyncpg
 from nicegui import app, ui
 
 from ..models import FolderRecord, UserRecord
-from .utils import CustomButtonBuilder, show_header, show_menu
+from .utils import CustomButtonBuilder, show_header, say_hi
 
 
 def install(db: asyncpg.Pool):
@@ -50,6 +50,7 @@ def install(db: asyncpg.Pool):
                 )
             ],
         )
+        await say_hi(db)
         # ui.separator()
         with ui.row(wrap=True).classes("items-start justify-center gap-10 m-4"):
             async with db.acquire() as d:

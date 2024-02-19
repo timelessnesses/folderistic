@@ -133,24 +133,19 @@ async def show_header(
 
     Args:
         db (asyncpg.Pool | None, optional): Database
-        buttons (list[CustomButtonBuilder] | None, optional): Buttons with included props if you wish to add any. Defaults to None.
+        header_name (str): Text to display in the header
+        buttons (list[CustomButtonBuilder] | None, optional): Buttons to display on one side of the header.
     """
-    left_drawer = (
-        ui.drawer("left").classes("items-center").style(f"background-color: whitesmoke")
-    )
-    with ui.header(elevated=True).classes("items-center justify-between"):
-        ui.button(on_click=await show_menu(left_drawer, db)).props(
-            "flat color=white icon=menu"
-        )
-        ui.label(f"Folderistic - {header_name}")
-        if buttons is not None and len(buttons) != 0:
-            for x in buttons:
-                ui.button(on_click=x.on_click).props(x.prop)
+    left_drawer = ui.drawer("left").classes("items-center").style("background-color: whitesmoke")
+    with ui.header(elevated=True).classes("flex items-center justify-between"):
+        ui.button(on_click=await show_menu(left_drawer, db)).props("flat color=white icon=menu")
+        ui.label(f"Folderistic - {header_name}").classes("mx-auto")
+        if buttons:
+            for button in buttons:
+                ui.button(on_click=button.on_click).props(button.prop)
         else:
             ui.label()
-        # d: asyncpg.Connection
-
-
+            
 async def say_hi(db: asyncpg.Pool):
     """Function that says hi to user
 
