@@ -129,5 +129,5 @@ def thingy(app: fastapi.FastAPI):
     app.add_route("/metrics-starlette", starlette_exporter.handle_metrics)
 thingy(app)
 ui.run_with(
-    app=fastapi.FastAPI(), title="Folderistic", dark=None, storage_secret=secret
+    app=fastapi.FastAPI(), title="Folderistic", dark=None, storage_secret=secret, favicon="./favicon.ico"
 )
