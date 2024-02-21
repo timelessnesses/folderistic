@@ -108,10 +108,12 @@ async def show_menu(l: ui.drawer, db: asyncpg.Pool | None):
                 d.set_text(
                     f"Has been running for: {str(datetime.datetime.now() - start).split('.')[0]}"
                 )
+                e.set_text(f"RAM: {round(psutil.virtual_memory().percent,2)}%")
 
             a = ui.label("Database Latency: Unmeasured")
             b = ui.label("CPU: Unmeasured")
             c = ui.label("Disk: Unmeasured")
+            e = ui.label("RAM: Unmeasured")
             d = ui.label("Has been running for: Not Found")
             ui.timer(1, set_stuff)
             ui.button("Logout", on_click=logout).classes("red")
