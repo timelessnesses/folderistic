@@ -5,7 +5,7 @@ import asyncpg
 from nicegui import app, ui
 
 from ..models import FolderRecord, UserRecord
-from .utils import CustomButtonBuilder, show_header, say_hi
+from .utils import CustomButtonBuilder, say_hi, show_header
 
 
 def install(db: asyncpg.Pool):

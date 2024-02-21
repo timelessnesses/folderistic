@@ -138,16 +138,21 @@ async def show_header(
         header_name (str): Text to display in the header
         buttons (list[CustomButtonBuilder] | None, optional): Buttons to display on one side of the header.
     """
-    left_drawer = ui.drawer("left").classes("items-center").style("background-color: whitesmoke")
+    left_drawer = (
+        ui.drawer("left").classes("items-center").style("background-color: whitesmoke")
+    )
     with ui.header(elevated=True).classes("flex items-center justify-between"):
-        ui.button(on_click=await show_menu(left_drawer, db)).props("flat color=white icon=menu")
+        ui.button(on_click=await show_menu(left_drawer, db)).props(
+            "flat color=white icon=menu"
+        )
         ui.label(f"Folderistic - {header_name}").classes("mx-auto")
         if buttons:
             for button in buttons:
                 ui.button(on_click=button.on_click).props(button.prop)
         else:
             ui.label()
-            
+
+
 async def say_hi(db: asyncpg.Pool):
     """Function that says hi to user
 

@@ -1,15 +1,14 @@
 import asyncio
 import datetime
+import io
 import os
 import uuid
+import zipfile
 
 import asyncpg
 import bcrypt
 from nicegui import app, ui
 from nicegui.events import UploadEventArguments
-import zipfile
-import io
-import os
 
 from ..models import FileRecord, FolderRecord, UserRecord
 from .utils import CustomButtonBuilder, show_header, show_menu
@@ -43,7 +42,7 @@ def install(db: asyncpg.Pool):
                     fp.write(file.read())
             except Exception:
                 await create_folders(f"files/{folder_id}")
-                return await upload_event(u,n)
+                return await upload_event(u, n)
             async with db.acquire() as d:
                 user = (
                     await d.fetch(
@@ -117,20 +116,31 @@ def install(db: asyncpg.Pool):
                         "flat color=white icon=file_upload"
                     )
                 )
+
             async def add_people():
                 with ui.dialog(value=True), ui.card():
-                    ui.label("Users that have access to this folder (All administrators will have a access to every folder but they may not show up here.)")
-                    with ui.element("q-list").props('bordered separator'):
+                    ui.label(
+                        "Users that have access to this folder (All administrators will have a access to every folder but they may not show up here.)"
+                    )
+                    with ui.element("q-list").props("bordered separator"):
                         async with db.acquire() as d:
-                            users = (await d.fetch("SELECT accessers FROM folders WHERE id = $1", folder_id, record_class=FolderRecord))[0]
+                            users = (
+                                await d.fetch(
+                                    "SELECT accessers FROM folders WHERE id = $1",
+                                    folder_id,
+                                    record_class=FolderRecord,
+                                )
+                            )[0]
                             for user in users.accessers:
                                 with ui.element("q-item"):
-                                    with ui.element('q-item-section'):
+                                    with ui.element("q-item-section"):
                                         ui.label(user)
+
                     async def add_user():
                         usernames: list[str] = username.value.split(",")
                         async with db.acquire() as d:
-                            await d.execute("""
+                            await d.execute(
+                                """
                             UPDATE folders
                             SET accessers = ARRAY(
                                 SELECT DISTINCT unnest
@@ -141,28 +151,49 @@ def install(db: asyncpg.Pool):
                                 ) s
                             )
                             WHERE id = $1;
-                                            """, folder_id, usernames)
-                            ui.notify("Successfully added new users to be able to access this folder!", type="positive")
+                                            """,
+                                folder_id,
+                                usernames,
+                            )
+                            ui.notify(
+                                "Successfully added new users to be able to access this folder!",
+                                type="positive",
+                            )
                             ui.timer(3, lambda: ui.open(f"/folder/{folder_id}"))
+
                     async with db.acquire() as d:
-                        users = await d.fetch("SELECT username FROM users", record_class=UserRecord)
-                    username = ui.input("Input your username here splitting by commas", autocomplete=[x.username for x in users])
-                    ui.button("Submit",on_click=add_user)
-                        
+                        users = await d.fetch(
+                            "SELECT username FROM users", record_class=UserRecord
+                        )
+                    username = ui.input(
+                        "Input your username here splitting by commas",
+                        autocomplete=[x.username for x in users],
+                    )
+                    ui.button("Submit", on_click=add_user)
+
             if role[0].roles == "admin":
                 buttons.append(
-                    CustomButtonBuilder(on_click=add_people).props("flat color=white icon=person_add")
+                    CustomButtonBuilder(on_click=add_people).props(
+                        "flat color=white icon=person_add"
+                    )
                 )
+
             async def zip_files_then_download():
                 notification = ui.notification(timeout=None)
                 notification.spinner = True
                 notification.message = "Processing"
                 zipped = io.BytesIO()
                 # notification.message = "Initializing ZipFile In Memory"
-                with zipfile.ZipFile(zipped, "a", zipfile.ZIP_DEFLATED, False) as zipper:
+                with zipfile.ZipFile(
+                    zipped, "a", zipfile.ZIP_DEFLATED, False
+                ) as zipper:
                     # notification.message = "Getting all files in the folder"
                     async with db.acquire() as d:
-                        files = await d.fetch("SELECT * from files WHERE folder = $1", folder_id,record_class=FileRecord)
+                        files = await d.fetch(
+                            "SELECT * from files WHERE folder = $1",
+                            folder_id,
+                            record_class=FileRecord,
+                        )
                     # notification.message = "Successfully got all files"
                     file_names = []
                     for file in files:
@@ -184,7 +215,7 @@ def install(db: asyncpg.Pool):
                 notification.spinner = False
                 notification.type = "positive"
                 ui.timer(3, notification.dismiss, once=True)
-                    
+
             buttons.append(
                 CustomButtonBuilder(on_click=zip_files_then_download).props(
                     "flat color=white icon=folder_zip"

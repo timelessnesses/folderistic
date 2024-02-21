@@ -2,8 +2,8 @@ import asyncpg
 from dotenv import load_dotenv
 
 load_dotenv()
-import os
 import getpass
+import os
 
 import bcrypt
 
