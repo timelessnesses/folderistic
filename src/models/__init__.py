@@ -29,7 +29,7 @@ class UserRecord(RecordWithGetAttributeIncluded):
     "Salt that is used to hash a password"
 
     session: str
-    "UUID of the session (only one session per device)"
+    "UUID of the session (only one session per account)"
 
     roles: typing.Literal["admin", "uploaders", "viewers"]
     "Role of the user"
