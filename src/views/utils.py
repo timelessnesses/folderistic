@@ -10,6 +10,7 @@ from nicegui import app, ui
 
 from ..models import UserRecord
 
+# ping = 0
 
 class CustomButtonBuilder:
     """
@@ -35,10 +36,12 @@ start = datetime.datetime.now()
 
 
 async def db_ping(db: asyncpg.Pool):
+    global ping
     async with db.acquire() as d:
         start = time.time()
         await d.fetch("SELECT 1;")
         stop = time.time()
+    # ping = stop - start
     return stop - start
 
 
