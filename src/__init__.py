@@ -27,6 +27,7 @@ from .views.utils import db_ping
 db = asyncpg.create_pool(host=os.getenv("FOLDERISTIC_HOST"), user=os.getenv("FOLDERISTIC_USER"), password=os.getenv("FOLDERISTIC_PASS"), database=os.getenv("FOLDERISTIC_DB"))  # type: ignore
 initialized_db = False
 
+
 @app.on_startup
 async def ls():
     g = logging.getLogger("folderistic.startup")
@@ -36,7 +37,8 @@ async def ls():
             a = await db
             assert a is not None
             db = a
-        except: pass
+        except:
+            pass
         finally:
             initialized_db = True
     install(app, db)
@@ -53,6 +55,7 @@ async def ls():
 async def die():
     if not initialized_db:
         await db.close()
+
 
 try:
     with open("./SECRET.uuid4") as fp:
@@ -123,7 +126,9 @@ def threads():
             if thread.daemon:
                 DAEMON.inc()
             METRIC.inc()
+
     return handle
+
 
 def thingy(app: fastapi.FastAPI):
     prometheus = Instrumentator(should_instrument_requests_inprogress=True)

@@ -11,10 +11,11 @@ import starlette.middleware.base
 import starlette.types
 from nicegui import Client, app
 
+
 class AuthMiddleWare(starlette.middleware.base.BaseHTTPMiddleware):
-    
+
     db: asyncpg.Pool
-    
+
     def __init__(self, app: starlette.types.ASGIApp, database: asyncpg.Pool) -> None:
         super().__init__(app, None)
         self.db = database
