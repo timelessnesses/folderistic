@@ -71,18 +71,7 @@ def db_latency():
     )
 
     async def handle(_: Info):
-        global db, initialized_db
-        if not initialized_db:
-            try:
-                a = await db
-                assert a is not None
-                db = a
-            except: pass
-            finally:
-                initialized_db = True
-        assert db is not None
         METRIC.set(await db_ping(db))
-        await db.close()
 
     return handle
 
@@ -128,16 +117,13 @@ def threads():
     ALIVE = prometheus_client.Gauge("alive_threads", "Threads that is actually alive")
 
     def handle(_: Info):
-        j = 0
-        for i, thread in enumerate(threading.enumerate(), start=1):
-            j = i
+        for __, thread in enumerate(threading.enumerate(), start=1):
             if thread.is_alive():
                 ALIVE.inc()
             if thread.daemon:
                 DAEMON.inc()
-
-        METRIC.set(j)
-
+            METRIC.inc()
+    return handle
 
 def thingy(app: fastapi.FastAPI):
     prometheus = Instrumentator(should_instrument_requests_inprogress=True)
