@@ -40,15 +40,22 @@ def install(db: asyncpg.Pool):
 
                 ui.button("Submit", on_click=create_new_folder)
             return dialog.open
-
-        await show_header(
-            db,
-            "Listing",
-            [
+        buttons = []
+        role = await db.fetch(
+                        "SELECT roles FROM users WHERE session = $1",
+                        str(app.storage.user.get("authenticator")),
+                        record_class=UserRecord,
+                    )
+        if role[0].roles == "admin":
+            buttons = [
                 CustomButtonBuilder(popup_thigmajig()).props(
                     "flat color=white icon=create_new_folder"
                 )
-            ],
+            ]
+        await show_header(
+            db,
+            "Listing",
+            buttons
         )
         await say_hi(db)
         # ui.separator()
