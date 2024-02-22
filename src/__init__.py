@@ -69,6 +69,7 @@ def db_latency():
         db = await asyncpg.create_pool(host=os.getenv("FOLDERISTIC_HOST"), user=os.getenv("FOLDERISTIC_USER"), password=os.getenv("FOLDERISTIC_PASS"), database=os.getenv("FOLDERISTIC_DB"))  # type: ignore
         assert db is not None
         METRIC.set(await db_ping(db))
+        await db.close()
 
     return handle
 
