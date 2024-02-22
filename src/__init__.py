@@ -82,6 +82,7 @@ def db_latency():
                 initialized_db = True
         assert db is not None
         METRIC.set(await db_ping(db))
+        await db.close()
 
     return handle
 
