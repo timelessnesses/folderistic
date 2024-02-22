@@ -20,18 +20,25 @@ load_dotenv()
 import logging
 import os
 
-from .middlewares import install_middlewares
+from . import middlewares
 from .views import install
 from .views.utils import db_ping
 
-db: asyncpg.Pool = None  # type: ignore
-
+db = asyncpg.create_pool(host=os.getenv("FOLDERISTIC_HOST"), user=os.getenv("FOLDERISTIC_USER"), password=os.getenv("FOLDERISTIC_PASS"), database=os.getenv("FOLDERISTIC_DB"))  # type: ignore
+initialized_db = False
 
 @app.on_startup
 async def ls():
     g = logging.getLogger("folderistic.startup")
-    global db
-    db = await asyncpg.create_pool(host=os.getenv("FOLDERISTIC_HOST"), user=os.getenv("FOLDERISTIC_USER"), password=os.getenv("FOLDERISTIC_PASS"), database=os.getenv("FOLDERISTIC_DB"))  # type: ignore
+    global db, initialized_db
+    if not initialized_db:
+        try:
+            a = await db
+            assert a is not None
+            db = a
+        except: pass
+        finally:
+            initialized_db = True
     install(app, db)
     if db is None:
         raise Exception("pool is none?")
@@ -44,10 +51,8 @@ async def ls():
 
 @app.on_shutdown
 async def die():
-    await db.close()
-
-
-install_middlewares(app)
+    if not initialized_db:
+        await db.close()
 
 try:
     with open("./SECRET.uuid4") as fp:
@@ -56,7 +61,7 @@ except FileNotFoundError:
     secret = str(uuid.uuid4())
     with open("./SECRET.uuid4", "w") as fp:
         fp.write(secret)
-app.add_middleware(middlewares.auth.AuthMiddleWare)
+app.add_middleware(middlewares.auth.AuthMiddleWare, database=db)
 app.add_middleware(starlette_exporter.middleware.PrometheusMiddleware)
 
 
@@ -66,7 +71,15 @@ def db_latency():
     )
 
     async def handle(_: Info):
-        db = await asyncpg.create_pool(host=os.getenv("FOLDERISTIC_HOST"), user=os.getenv("FOLDERISTIC_USER"), password=os.getenv("FOLDERISTIC_PASS"), database=os.getenv("FOLDERISTIC_DB"))  # type: ignore
+        global db, initialized_db
+        if not initialized_db:
+            try:
+                a = await db
+                assert a is not None
+                db = a
+            except: pass
+            finally:
+                initialized_db = True
         assert db is not None
         METRIC.set(await db_ping(db))
 
@@ -78,7 +91,7 @@ def space_used():
     LEFT = prometheus_client.Gauge("disk_space_left", "Total disk space left on root")
 
     def handle(_: Info):
-        total, used, free = shutil.disk_usage("/")
+        __, used, free = shutil.disk_usage("/")
         USED.set(used)
         LEFT.set(free)
 

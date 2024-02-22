@@ -24,6 +24,10 @@ starlette-exporter = "^0.21.0"
 gc-prometheus = "^0.1.0"
 
 
+[tool.poetry.group.dev.dependencies]
+isort = "^5.13.2"
+black = "^24.2.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

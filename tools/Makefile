@@ -8,4 +8,5 @@ remove_user:
 	poetry run python ./remove_user.py
 reset_user_auth:
 	poetry run python ./reset_user_auth.py
-
+bulk_new_users:
+	poetry run python ./bulk_new_users.py
