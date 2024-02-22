@@ -3,4 +3,4 @@
 *.nicegui/
 SECRET.uuid4
 *files/
-credentials.txt
+*credentials.txt
