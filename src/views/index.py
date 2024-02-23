@@ -22,7 +22,7 @@ def install(db: asyncpg.Pool):
                         str(app.storage.user.get("authenticator")),
                         record_class=UserRecord,
                     )
-                    if role[0].roles != "admin":
+                    if role[0].roles not in ["admin", "uploaders"]:
                         ui.notify(
                             "You are NOT an Administrator. Please contact your administrator for creating new folders.",
                             type="negative",
@@ -46,7 +46,7 @@ def install(db: asyncpg.Pool):
                         str(app.storage.user.get("authenticator")),
                         record_class=UserRecord,
                     )
-        if role[0].roles == "admin":
+        if role[0].roles in ["admin", "uploaders"]:
             buttons = [
                 CustomButtonBuilder(popup_thigmajig()).props(
                     "flat color=white icon=create_new_folder"
