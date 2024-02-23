@@ -77,6 +77,7 @@ def install(db: asyncpg.Pool):
                             str(app.storage.user.get("autheticator")),
                             record_class=FolderRecord,
                         )
+                        print(a)
                 else:
                     raise Exception("???")
                 for f in a:
