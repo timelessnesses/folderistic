@@ -74,11 +74,10 @@ def install(db: asyncpg.Pool):
                     else:
                         a = await d.fetch(
                             "SELECT * FROM folders WHERE (SELECT username FROM users WHERE session = $1) = ANY(accessers);",
-                            str(app.storage.user.get("autheticator")),
+                            str(app.storage.user.get("authenticator")),
                             record_class=FolderRecord,
                         )
-                        print(a)
-                else:
+               else:
                     raise Exception("???")
                 for f in a:
                     # print(f)
