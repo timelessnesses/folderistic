@@ -18,7 +18,7 @@ def install(db: asyncpg.Pool):
 
                 async def create_new_folder():
                     role = await db.fetch(
-                        "SELECT roles FROM users WHERE session = $1",
+                        "SELECT roles, username FROM users WHERE session = $1",
                         str(app.storage.user.get("authenticator")),
                         record_class=UserRecord,
                     )
@@ -31,7 +31,7 @@ def install(db: asyncpg.Pool):
                     await db.execute(
                         "INSERT INTO folders(name, accessers, id) VALUES($1, $2, $3)",
                         f.value,
-                        [],
+                        [roles[0].username],
                         str(uuid.uuid4()),
                     )
                     ui.notify("Refreshing in 2 seconds", type="ongoing")
