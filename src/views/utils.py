@@ -87,11 +87,6 @@ async def show_menu(l: ui.drawer, db: asyncpg.Pool | None):
         )
         if app.storage.user.get("authenticated", None) and db is not None:
 
-            async def s():
-                a.set_text(
-                    f"Database Latency: {(await db_ping(db)) * 1000:.2f} milliseconds"
-                )
-
             x = await db.fetch(
                 "SELECT username, roles FROM users WHERE session = $1",
                 str(app.storage.user.get("authenticator")),
@@ -120,9 +115,10 @@ async def show_menu(l: ui.drawer, db: asyncpg.Pool | None):
             e = ui.label("RAM: Unmeasured")
             d = ui.label("Has been running for: Not Found")
             ui.timer(1, set_stuff)
-            ui.button("Logout", on_click=logout).classes("red")
+            ui.button("Logout", on_click=logout, color="red")
         else:
             ui.button("Login", on_click=lambda: ui.open("/login"))
+        ui.button("About", on_click=lambda: ui.open("/about"))
 
     def h():
         l.toggle()

@@ -24,7 +24,7 @@ class AuthMiddleWare(starlette.middleware.base.BaseHTTPMiddleware):
         if not await self.logged_in():
             if (
                 request.url.path in Client.page_routes.values()
-                and request.url.path not in ["/login", "/failed_auth"]
+                and request.url.path not in ["/login", "/failed_auth", "/about"]
             ):
                 return fastapi.responses.RedirectResponse("/failed_auth")
         return await call_next(request)
