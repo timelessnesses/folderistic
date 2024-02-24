@@ -9,6 +9,7 @@ from nicegui import app, ui
 
 from ..models import UserRecord
 
+
 class CustomButtonBuilder:
     """
     A custom button builder to be used in functions.
