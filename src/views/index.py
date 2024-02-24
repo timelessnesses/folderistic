@@ -18,11 +18,11 @@ def install(db: asyncpg.Pool):
 
                 async def create_new_folder():
                     role = await db.fetch(
-                        "SELECT roles FROM users WHERE session = $1",
+                        "SELECT roles, username FROM users WHERE session = $1",
                         str(app.storage.user.get("authenticator")),
                         record_class=UserRecord,
                     )
-                    if role[0].roles != "admin":
+                    if role[0].roles not in ["admin", "uploaders"]:
                         ui.notify(
                             "You are NOT an Administrator. Please contact your administrator for creating new folders.",
                             type="negative",
@@ -31,7 +31,7 @@ def install(db: asyncpg.Pool):
                     await db.execute(
                         "INSERT INTO folders(name, accessers, id) VALUES($1, $2, $3)",
                         f.value,
-                        [],
+                        [roles[0].username],
                         str(uuid.uuid4()),
                     )
                     ui.notify("Refreshing in 2 seconds", type="ongoing")
@@ -46,7 +46,7 @@ def install(db: asyncpg.Pool):
                         str(app.storage.user.get("authenticator")),
                         record_class=UserRecord,
                     )
-        if role[0].roles == "admin":
+        if role[0].roles in ["admin", "uploaders"]:
             buttons = [
                 CustomButtonBuilder(popup_thigmajig()).props(
                     "flat color=white icon=create_new_folder"
@@ -74,7 +74,7 @@ def install(db: asyncpg.Pool):
                     else:
                         a = await d.fetch(
                             "SELECT * FROM folders WHERE (SELECT username FROM users WHERE session = $1) = ANY(accessers);",
-                            str(app.storage.user.get("autheticator")),
+                            str(app.storage.user.get("authenticator")),
                             record_class=FolderRecord,
                         )
                 else:
