@@ -14,7 +14,6 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
     @ui.page("/folder/{folder_id}/{file_id}")
     async def accessing_file(folder_id: str, file_id: str):
         async with db.acquire() as d:
-
             async def get_file_id(file_id: str):
                 file_path = (
                     await d.fetch(
