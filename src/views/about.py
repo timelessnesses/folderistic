@@ -1,20 +1,16 @@
-import os
-from pathlib import Path
-
 import asyncpg
 import fastapi
-import humanize
-from nicegui import app, ui
+from nicegui import ui
 
-from ..models import FileRecord, FolderRecord, UserRecord
 from .utils import show_header
 
 
-def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
+def install(_: fastapi.FastAPI, db: asyncpg.Pool):
     @ui.page("/about")
     async def about():
         await show_header(db, "About")
-        ui.markdown("""
+        ui.markdown(
+            """
 # About
 
 I am Rukchad Wongprayoon (aka timelessnesses on [GitHub](https://github.com/timelessnesses) and my [website](https://timelessnesses.me)) and Thanks for using and helping [Folderistic](https://github.com/timelessnesses/folderistic)!  
@@ -23,5 +19,5 @@ With barely any knowledge about full stack web application, I tried to work on t
 I got to know what algorithm I should salt my password with, database choices, secure backend and more!  
 Thanks again for using this project! If you found any bugs, please submit them to issues tab in the Github repository!  
 See you! Bye!
-                    """)
-        
+                    """
+        )

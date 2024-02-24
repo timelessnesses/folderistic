@@ -31,7 +31,7 @@ def install(db: asyncpg.Pool):
                     await db.execute(
                         "INSERT INTO folders(name, accessers, id) VALUES($1, $2, $3)",
                         f.value,
-                        [roles[0].username],
+                        [role[0].username],
                         str(uuid.uuid4()),
                     )
                     ui.notify("Refreshing in 2 seconds", type="ongoing")
@@ -40,23 +40,20 @@ def install(db: asyncpg.Pool):
 
                 ui.button("Submit", on_click=create_new_folder)
             return dialog.open
+
         buttons = []
         role = await db.fetch(
-                        "SELECT roles FROM users WHERE session = $1",
-                        str(app.storage.user.get("authenticator")),
-                        record_class=UserRecord,
-                    )
+            "SELECT roles FROM users WHERE session = $1",
+            str(app.storage.user.get("authenticator")),
+            record_class=UserRecord,
+        )
         if role[0].roles in ["admin", "uploaders"]:
             buttons = [
                 CustomButtonBuilder(popup_thigmajig()).props(
                     "flat color=white icon=create_new_folder"
                 )
             ]
-        await show_header(
-            db,
-            "Listing",
-            buttons
-        )
+        await show_header(db, "Listing", buttons)
         await say_hi(db)
         # ui.separator()
         with ui.row(wrap=True).classes("items-start justify-center gap-10 m-4"):

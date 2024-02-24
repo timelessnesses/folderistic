@@ -1,6 +1,5 @@
 import asyncio
 import datetime
-import os
 import time
 import typing
 
@@ -9,9 +8,6 @@ import psutil
 from nicegui import app, ui
 
 from ..models import UserRecord
-
-# ping = 0
-
 
 class CustomButtonBuilder:
     """

@@ -1,7 +1,7 @@
 import asyncpg
 import fastapi
 
-from . import accessing_file, failed_auth, folder, index, login, about
+from . import about, accessing_file, failed_auth, folder, index, login
 
 
 def install(app: fastapi.FastAPI, db: asyncpg.Pool):

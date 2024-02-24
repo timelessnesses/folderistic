@@ -5,7 +5,7 @@ import bcrypt
 from nicegui import app, ui
 
 from ..models import UserRecord
-from .utils import show_header, show_menu
+from .utils import show_header
 
 
 def install(db: asyncpg.Pool):

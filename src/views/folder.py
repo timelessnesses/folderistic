@@ -6,12 +6,11 @@ import uuid
 import zipfile
 
 import asyncpg
-import bcrypt
 from nicegui import app, ui
 from nicegui.events import UploadEventArguments
 
 from ..models import FileRecord, FolderRecord, UserRecord
-from .utils import CustomButtonBuilder, show_header, show_menu
+from .utils import CustomButtonBuilder, show_header
 
 
 def install(db: asyncpg.Pool):
