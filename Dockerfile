@@ -11,4 +11,4 @@ RUN apk del gcc linux-headers build-base
 FROM python:3.11-alpine as run
 WORKDIR /folderistic
 COPY --from=build /folderistic .
-CMD ["/bot/.venv/bin/uvicorn", "src:app"]
+CMD ["/folderistic/.venv/bin/uvicorn", "src:app"]
