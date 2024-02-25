@@ -4,10 +4,9 @@ services:
             context: .
         environment:
             - FOLDERISTIC_HOST=db
-            - ALPHABET_DB_PORT=5432
-            - ALPHABET_DB_USER=folderistic
-            - ALPHABET_DB_PASSWORD=folderistic
-            - ALPHABET_DB_NAME=folderistic
+            - FOLDERISTIC_USER=folderistic
+            - FOLDERISTIC_PASS=folderistic
+            - FOLDERISTIC_DB=folderistic
     db:
         image: postgres:14
         environment:
