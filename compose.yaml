@@ -18,3 +18,4 @@ services:
             - ./src/types.sql:/docker-entrypoint-initdb.d/init.sql
 volumes:
     data:
+    src: 
