@@ -1,0 +1,20 @@
+services:
+    folderistic:
+        build:
+            context: .
+        environment:
+            - FOLDERISTIC_HOST=db
+            - ALPHABET_DB_PORT=5432
+            - ALPHABET_DB_USER=folderistic
+            - ALPHABET_DB_PASSWORD=folderistic
+            - ALPHABET_DB_NAME=folderistic
+    db:
+        image: postgres:14
+        environment:
+            - POSTGRES_USER=folderistic
+            - POSTGRES_PASSWORD=folderistic
+            - POSTGRES_DB=folderistic
+        volumes:
+            - data:/var/lib/postgresql/data
+volumes:
+    data:
