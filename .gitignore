@@ -4,3 +4,4 @@
 SECRET.uuid4
 *files/
 *credentials.txt
+*.vscode/
