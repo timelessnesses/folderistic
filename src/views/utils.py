@@ -5,10 +5,40 @@ import typing
 
 import asyncpg
 import psutil
-from nicegui import app, ui
+from nicegui import app, ui, App, Client
 
 from ..models import UserRecord
 
+class Connections:
+    nicegui_app: App
+    
+    connected = 0
+    clients: list[Client] = []
+    
+    def __init__(self, a: App) -> None:
+        self.nicegui_app = a
+        a.on_connect(self.connect)
+        a.on_disconnect(self.disconnect)
+    
+    def connect(self):
+        self.connected += 1
+    
+    def disconnect(self):
+        self.connected -= 1
+        
+    def append_client(self, client: Client):
+        if client.id not in [x.id for x in self.clients]:
+            self.clients.append(client)
+        client.on_disconnect(lambda: self.clients.remove(client))
+        
+    async def broadcast(self, sender: str, msg: str):
+        for session in self.clients:
+            try:
+                session # ???
+            except:
+                self.clients.remove(session)
+        
+user_count = Connections(app)
 
 class CustomButtonBuilder:
     """
@@ -51,13 +81,15 @@ def disk():
     return round(psutil.disk_usage("/").percent, 2)
 
 
-async def show_menu(l: ui.drawer, db: asyncpg.Pool | None):
+async def show_menu(l: ui.drawer, db: asyncpg.Pool | None, client: Client):
     """Showing menu in header
 
     Args:
         l (ui.drawer): A drawer
         db (asyncpg.Pool | None, optional): Database
     """
+    if client.id not in [x.id for x in user_count.clients]:
+        user_count.clients.append(client)
     if db is not None:
 
         async def logout():
@@ -94,6 +126,11 @@ async def show_menu(l: ui.drawer, db: asyncpg.Pool | None):
             ui.label(f"User: {username} Role: {role.capitalize()}").style(
                 "font-size: 15px"
             )
+            
+            if role == "admin":
+                async def broadcast_messages(sender: str, message: str):
+                    for session in user_count.clients:
+                        pass
 
             async def set_stuff():
                 a.set_text(
@@ -126,6 +163,7 @@ async def show_menu(l: ui.drawer, db: asyncpg.Pool | None):
 async def show_header(
     db: asyncpg.Pool | None,
     header_name: str,
+    client: Client,
     buttons: list[CustomButtonBuilder] | None = None,
 ):
     """A function that shows header
@@ -139,7 +177,7 @@ async def show_header(
         ui.drawer("left").classes("items-center").style("background-color: whitesmoke")
     )
     with ui.header(elevated=True).classes("flex items-center justify-between"):
-        ui.button(on_click=await show_menu(left_drawer, db)).props(
+        ui.button(on_click=await show_menu(left_drawer, db, client)).props(
             "flat color=white icon=menu"
         )
         ui.label(f"Folderistic - {header_name}").classes("mx-auto")

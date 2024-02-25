@@ -2,7 +2,7 @@ import uuid
 
 import asyncpg
 import bcrypt
-from nicegui import app, ui
+from nicegui import app, ui, Client
 
 from ..models import UserRecord
 from .utils import show_header
@@ -10,7 +10,7 @@ from .utils import show_header
 
 def install(db: asyncpg.Pool):
     @ui.page("/login")
-    async def login():
+    async def login(client: Client):
         async def try_login():
             p = password.value
             u = username.value
@@ -69,7 +69,7 @@ def install(db: asyncpg.Pool):
                     ):
                         ui.open("/")
                         return
-        await show_header(db, "Login")
+        await show_header(db, "Login", client)
         with ui.card().classes("absolute-center"):
             username = ui.input("Username").on("keydown.enter", try_login)
             password = ui.input(

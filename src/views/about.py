@@ -1,14 +1,14 @@
 import asyncpg
 import fastapi
-from nicegui import ui
+from nicegui import ui, Client
 
 from .utils import show_header
 
 
 def install(_: fastapi.FastAPI, db: asyncpg.Pool):
     @ui.page("/about")
-    async def about():
-        await show_header(db, "About")
+    async def about(client: Client):
+        await show_header(db, "About", client)
         ui.markdown(
             """
 # About
