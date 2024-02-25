@@ -14,8 +14,7 @@ services:
             - POSTGRES_PASSWORD=folderistic
             - POSTGRES_DB=folderistic
         volumes:
-            - data:/var/lib/postgresql/data
             - ./src/types.sql:/docker-entrypoint-initdb.d/init.sql
+            - data:/var/lib/postgresql/data
 volumes:
     data:
-    src: 
