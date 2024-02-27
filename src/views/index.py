@@ -77,15 +77,12 @@ def install(db: asyncpg.Pool):
                 else:
                     raise Exception("???")
                 for f in a:
-                    # print(f)
                     with ui.column().classes("w-auto h-auto"):
                         j = f.id
-                        # print(j)
 
                         def v(
                             j=j,
                         ):
-                            # print(j)
                             ui.open(f"/folder/{j}")
 
                         with ui.button(on_click=v).classes(

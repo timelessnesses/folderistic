@@ -100,10 +100,8 @@ async def show_menu(l: ui.drawer, db: asyncpg.Pool | None):
                     def x():
                         ui.notify("Sending broadcasts.", type="ongoing", timeout=2000)
                         for client in Client.instances.values():
-                            print(client)
                             with client:
                                 with ui.dialog(value=True), ui.card():
-                                    print(v)
                                     ui.markdown(f"""
                                                 # Broadcasting
                                                 Administrator {admin} has sent you a message<br>

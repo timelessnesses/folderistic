@@ -55,5 +55,4 @@ class AuthMiddleWare(starlette.middleware.base.BaseHTTPMiddleware):
             except Exception as a:
                 tries += 1
                 e = a
-                print(a)
         raise Exception("Unable to fetch data") from e

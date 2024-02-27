@@ -25,7 +25,6 @@ from .views import install
 from .views.utils import db_ping
 
 db = asyncpg.create_pool(host=os.getenv("FOLDERISTIC_HOST"), user=os.getenv("FOLDERISTIC_USER"), password=os.getenv("FOLDERISTIC_PASS"), database=os.getenv("FOLDERISTIC_DB"))  # type: ignore
-print(os.getenv("FOLDERISTIC_DB"))
 initialized_db = False
 
 
@@ -46,7 +45,6 @@ async def ls():
     if db is None:
         raise Exception("pool is none?")
     g.info("Connected to database")
-    print("hi")
     with open("./src/types.sql") as s:
         try:
             await db.execute(s.read())  # type: ignore
@@ -138,7 +136,7 @@ def threads():
 
 def users():
     ACTIVE = prometheus_client.Gauge("active_users", "Amount of active users on Folderistic that is currently online and connected to server")
-    ALL = prometheus_client.Gauge("users", "Amount of users registered on the platform")\
+    ALL = prometheus_client.Gauge("users", "Amount of users registered on the platform")
     
     async def handle(_: Info):
         ACTIVE.set_function(lambda: len(Client.instances.values()))

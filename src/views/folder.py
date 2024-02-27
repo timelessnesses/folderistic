@@ -64,7 +64,6 @@ def install(db: asyncpg.Pool):
                 n.dismiss()
 
         async def file_upload_popup():
-            # print("i got clicked")
             with ui.dialog(value=True):
                 with ui.card().classes("fixed-center absolute-center"):
                     ui.label(
@@ -225,16 +224,12 @@ def install(db: asyncpg.Pool):
             )
             with ui.row(wrap=True).classes("items-start justify-center gap-10 m-4"):
                 for f in files:
-                    # print(f)
                     with ui.column().classes("w-auto h-auto"):
                         j = f.id
-                        # print(j)
 
-                        # Define the on_click function with a default argument to capture the current value of `j`
                         def v(
                             j=j,
                         ):  # This captures the current value of `j` for each iteration
-                            # print(j)
                             ui.open(f"/folder/{folder_id}/{j}")
 
                         with ui.button(on_click=v).classes(
