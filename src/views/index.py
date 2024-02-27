@@ -10,7 +10,7 @@ from .utils import CustomButtonBuilder, say_hi, show_header
 
 def install(db: asyncpg.Pool):
     @ui.page("/")
-    async def index():
+    async def index(client):
         def popup_thigmajig():
             dialog = ui.dialog()
             with dialog, ui.card():

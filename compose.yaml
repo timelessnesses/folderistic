@@ -1,0 +1,19 @@
+services:
+    folderistic:
+        build:
+            context: .
+        environment:
+            - FOLDERISTIC_HOST=db
+            - FOLDERISTIC_USER=folderistic
+            - FOLDERISTIC_PASS=folderistic
+            - FOLDERISTIC_DB=folderistic
+    db:
+        image: postgres:14
+        environment:
+            - POSTGRES_USER=folderistic
+            - POSTGRES_PASSWORD=folderistic
+            - POSTGRES_DB=folderistic
+        volumes:
+            - data:/var/lib/postgresql/data
+volumes:
+    data:

@@ -5,11 +5,10 @@ import typing
 
 import asyncpg
 import psutil
-from nicegui import app, ui
+from nicegui import app, ui, App, Client
 
 from ..models import UserRecord
-
-
+    
 class CustomButtonBuilder:
     """
     A custom button builder to be used in functions.
@@ -94,7 +93,30 @@ async def show_menu(l: ui.drawer, db: asyncpg.Pool | None):
             ui.label(f"User: {username} Role: {role.capitalize()}").style(
                 "font-size: 15px"
             )
-
+            
+            if role == "admin":
+                def process_broadcast(i: ui.textarea, admin: str):
+                    v = i.value
+                    def x():
+                        ui.notify("Sending broadcasts.", type="ongoing", timeout=2000)
+                        for client in Client.instances.values():
+                            print(client)
+                            with client:
+                                with ui.dialog(value=True), ui.card():
+                                    print(v)
+                                    ui.markdown(f"""
+                                                # Broadcasting
+                                                Administrator {admin} has sent you a message<br>
+                                                {v}
+                                                """)
+                        ui.notify("Sent broadcasts!", type="positive")
+                    x()   
+                async def broadcasting():
+                    with ui.dialog(value=True), ui.card():
+                        ui.label("Please input your messages that you wanted to broadcast.")
+                        a = ui.textarea("Message", placeholder="Please input your messages that you wanted to broadcast.").props("clearable")
+                        ui.button("Submit", on_click=lambda: process_broadcast(a, username))
+                ui.button("Broadcast Message", on_click=broadcasting, color="green")
             async def set_stuff():
                 a.set_text(
                     f"Database Latency: {(await db_ping(db)) * 1000:.2f} milliseconds"

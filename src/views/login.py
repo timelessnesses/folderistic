@@ -12,8 +12,9 @@ def install(db: asyncpg.Pool):
     @ui.page("/login")
     async def login():
         async def try_login():
-            p = password.value
-            u = username.value
+            p = password.value.strip()
+            u = username.value.strip()
+            print(u)
 
             ui.notify(
                 "Currently going through database.", close_button=True, type="ongoing"
@@ -30,6 +31,7 @@ def install(db: asyncpg.Pool):
                     )
                     == 0
                 ):
+                    print(x)
                     ui.notify(
                         "Failed to authenticate: User is NOT found", type="negative"
                     )

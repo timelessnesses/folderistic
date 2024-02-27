@@ -12,7 +12,7 @@ import prometheus_client
 import psutil
 import starlette_exporter
 from dotenv import load_dotenv
-from nicegui import app, ui
+from nicegui import app, ui, Client
 from prometheus_fastapi_instrumentator import Instrumentator, metrics
 from prometheus_fastapi_instrumentator.metrics import Info
 
@@ -25,6 +25,7 @@ from .views import install
 from .views.utils import db_ping
 
 db = asyncpg.create_pool(host=os.getenv("FOLDERISTIC_HOST"), user=os.getenv("FOLDERISTIC_USER"), password=os.getenv("FOLDERISTIC_PASS"), database=os.getenv("FOLDERISTIC_DB"))  # type: ignore
+print(os.getenv("FOLDERISTIC_DB"))
 initialized_db = False
 
 
@@ -46,6 +47,12 @@ async def ls():
         raise Exception("pool is none?")
     g.info("Connected to database")
     print("hi")
+    with open("./src/types.sql") as s:
+        try:
+            await db.execute(s.read())  # type: ignore
+        except: pass
+        finally:
+            g.info("Executed types statements")
     with open("./src/start.sql") as s:
         await db.execute(s.read())  # type: ignore
         g.info("Executed starter statements")
@@ -129,7 +136,17 @@ def threads():
 
     return handle
 
+def users():
+    ACTIVE = prometheus_client.Gauge("active_users", "Amount of active users on Folderistic that is currently online and connected to server")
+    ALL = prometheus_client.Gauge("users", "Amount of users registered on the platform")\
+    
+    async def handle(_: Info):
+        ACTIVE.set_function(lambda: len(Client.instances.values()))
+        async with db.acquire() as d:
+            count = await d.fetch("SELECT COUNT(*) FROM users")
+            ALL.set(count[0]["count"])
 
+    return handle
 def thingy(app: fastapi.FastAPI):
     prometheus = Instrumentator(should_instrument_requests_inprogress=True)
     prometheus.add(db_latency())
@@ -137,6 +154,7 @@ def thingy(app: fastapi.FastAPI):
     prometheus.add(ram_used())
     prometheus.add(cpu_usage())
     prometheus.add(threads())
+    prometheus.add(users())
     prometheus.add(metrics.latency())
     prometheus.add(metrics.requests())
 
