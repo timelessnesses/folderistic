@@ -138,7 +138,7 @@ def threads():
 
 def users():
     ACTIVE = prometheus_client.Gauge("active_users", "Amount of active users on Folderistic that is currently online and connected to server")
-    ALL = prometheus_client.Gauge("users", "Amount of users registered on the platform")\
+    ALL = prometheus_client.Gauge("users", "Amount of users registered on the platform")
     
     async def handle(_: Info):
         ACTIVE.set_function(lambda: len(Client.instances.values()))
