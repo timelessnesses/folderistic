@@ -2,7 +2,7 @@ import uuid
 
 import asyncpg
 import bcrypt
-from nicegui import app, ui, Client
+from nicegui import app, ui
 
 from ..models import UserRecord
 from .utils import show_header
@@ -10,10 +10,11 @@ from .utils import show_header
 
 def install(db: asyncpg.Pool):
     @ui.page("/login")
-    async def login(client: Client):
+    async def login():
         async def try_login():
-            p = password.value
-            u = username.value
+            p = password.value.strip()
+            u = username.value.strip()
+            print(u)
 
             ui.notify(
                 "Currently going through database.", close_button=True, type="ongoing"
@@ -30,6 +31,7 @@ def install(db: asyncpg.Pool):
                     )
                     == 0
                 ):
+                    print(x)
                     ui.notify(
                         "Failed to authenticate: User is NOT found", type="negative"
                     )
@@ -69,7 +71,7 @@ def install(db: asyncpg.Pool):
                     ):
                         ui.open("/")
                         return
-        await show_header(db, "Login", client)
+        await show_header(db, "Login")
         with ui.card().classes("absolute-center"):
             username = ui.input("Username").on("keydown.enter", try_login)
             password = ui.input(

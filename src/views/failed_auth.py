@@ -1,5 +1,5 @@
 import asyncpg
-from nicegui import ui, Client
+from nicegui import ui
 
 from .utils import show_header
 
@@ -8,8 +8,8 @@ from .utils import show_header
 
 def install(_: asyncpg.Pool):
     @ui.page("/failed_auth")
-    async def failed_auth(client: Client):
-        await show_header(None, "Unauthorized", client)
+    async def failed_auth():
+        await show_header(None, "Unauthorized")
         with ui.card().classes("absolute-center"):
             ui.label(
                 "You are NOT authorized! Please login. We will redirect you in 3 seconds"

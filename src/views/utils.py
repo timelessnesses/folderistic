@@ -8,38 +8,7 @@ import psutil
 from nicegui import app, ui, App, Client
 
 from ..models import UserRecord
-
-class Connections:
-    nicegui_app: App
     
-    connected = 0
-    clients: list[Client] = []
-    
-    def __init__(self, a: App) -> None:
-        self.nicegui_app = a
-        a.on_connect(self.connect)
-        a.on_disconnect(self.disconnect)
-    
-    def connect(self):
-        self.connected += 1
-    
-    def disconnect(self):
-        self.connected -= 1
-        
-    def append_client(self, client: Client):
-        if client.id not in [x.id for x in self.clients]:
-            self.clients.append(client)
-        client.on_disconnect(lambda: self.clients.remove(client))
-        
-    async def broadcast(self, sender: str, msg: str):
-        for session in self.clients:
-            try:
-                session # ???
-            except:
-                self.clients.remove(session)
-        
-user_count = Connections(app)
-
 class CustomButtonBuilder:
     """
     A custom button builder to be used in functions.
@@ -81,15 +50,13 @@ def disk():
     return round(psutil.disk_usage("/").percent, 2)
 
 
-async def show_menu(l: ui.drawer, db: asyncpg.Pool | None, client: Client):
+async def show_menu(l: ui.drawer, db: asyncpg.Pool | None):
     """Showing menu in header
 
     Args:
         l (ui.drawer): A drawer
         db (asyncpg.Pool | None, optional): Database
     """
-    if client.id not in [x.id for x in user_count.clients]:
-        user_count.clients.append(client)
     if db is not None:
 
         async def logout():
@@ -128,10 +95,28 @@ async def show_menu(l: ui.drawer, db: asyncpg.Pool | None, client: Client):
             )
             
             if role == "admin":
-                async def broadcast_messages(sender: str, message: str):
-                    for session in user_count.clients:
-                        pass
-
+                def process_broadcast(i: ui.textarea, admin: str):
+                    v = i.value
+                    def x():
+                        ui.notify("Sending broadcasts.", type="ongoing", timeout=2000)
+                        for client in Client.instances.values():
+                            print(client)
+                            with client:
+                                with ui.dialog(value=True), ui.card():
+                                    print(v)
+                                    ui.markdown(f"""
+                                                # Broadcasting
+                                                Administrator {admin} has sent you a message<br>
+                                                {v}
+                                                """)
+                        ui.notify("Sent broadcasts!", type="positive")
+                    x()   
+                async def broadcasting():
+                    with ui.dialog(value=True), ui.card():
+                        ui.label("Please input your messages that you wanted to broadcast.")
+                        a = ui.textarea("Message", placeholder="Please input your messages that you wanted to broadcast.").props("clearable")
+                        ui.button("Submit", on_click=lambda: process_broadcast(a, username))
+                ui.button("Broadcast Message", on_click=broadcasting, color="green")
             async def set_stuff():
                 a.set_text(
                     f"Database Latency: {(await db_ping(db)) * 1000:.2f} milliseconds"
@@ -163,7 +148,6 @@ async def show_menu(l: ui.drawer, db: asyncpg.Pool | None, client: Client):
 async def show_header(
     db: asyncpg.Pool | None,
     header_name: str,
-    client: Client,
     buttons: list[CustomButtonBuilder] | None = None,
 ):
     """A function that shows header
@@ -177,7 +161,7 @@ async def show_header(
         ui.drawer("left").classes("items-center").style("background-color: whitesmoke")
     )
     with ui.header(elevated=True).classes("flex items-center justify-between"):
-        ui.button(on_click=await show_menu(left_drawer, db, client)).props(
+        ui.button(on_click=await show_menu(left_drawer, db)).props(
             "flat color=white icon=menu"
         )
         ui.label(f"Folderistic - {header_name}").classes("mx-auto")

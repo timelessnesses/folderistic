@@ -2,7 +2,7 @@ import asyncio
 import uuid
 
 import asyncpg
-from nicegui import app, ui, Client
+from nicegui import app, ui
 
 from ..models import FolderRecord, UserRecord
 from .utils import CustomButtonBuilder, say_hi, show_header
@@ -10,7 +10,7 @@ from .utils import CustomButtonBuilder, say_hi, show_header
 
 def install(db: asyncpg.Pool):
     @ui.page("/")
-    async def index(client: Client):
+    async def index(client):
         def popup_thigmajig():
             dialog = ui.dialog()
             with dialog, ui.card():
@@ -53,7 +53,7 @@ def install(db: asyncpg.Pool):
                     "flat color=white icon=create_new_folder"
                 )
             ]
-        await show_header(db, "Listing", client, buttons)
+        await show_header(db, "Listing", buttons)
         await say_hi(db)
         # ui.separator()
         with ui.row(wrap=True).classes("items-start justify-center gap-10 m-4"):

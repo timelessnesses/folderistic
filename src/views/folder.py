@@ -6,7 +6,7 @@ import uuid
 import zipfile
 
 import asyncpg
-from nicegui import app, ui, Client
+from nicegui import app, ui
 from nicegui.events import UploadEventArguments
 
 from ..models import FileRecord, FolderRecord, UserRecord
@@ -15,7 +15,7 @@ from .utils import CustomButtonBuilder, show_header
 
 def install(db: asyncpg.Pool):
     @ui.page("/folder/{folder_id}")
-    async def get_contents(folder_id: str, client: Client):
+    async def get_contents(folder_id: str):
         async def a():
             ui.notify("Redirecting back in 3 seconds", type="ongoing")
             await asyncio.sleep(3)
@@ -84,7 +84,7 @@ def install(db: asyncpg.Pool):
                 record_class=FolderRecord,
             )
             if len(folder) == 0:
-                await show_header(None, f"Unknown Folder", client)
+                await show_header(None, f"Unknown Folder")
                 with ui.card().classes("absolute-center"):
                     ui.label(
                         "Folder is not exists!"
@@ -221,7 +221,7 @@ def install(db: asyncpg.Pool):
                 )
             )
             await show_header(
-                db, f"Listing - Folder {folder[0].name} (ID: {folder[0].id})", client, buttons
+                db, f"Listing - Folder {folder[0].name} (ID: {folder[0].id})", buttons
             )
             with ui.row(wrap=True).classes("items-start justify-center gap-10 m-4"):
                 for f in files:

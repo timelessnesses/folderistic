@@ -7,8 +7,8 @@ from .utils import show_header
 
 def install(_: fastapi.FastAPI, db: asyncpg.Pool):
     @ui.page("/about")
-    async def about(client: Client):
-        await show_header(db, "About", client)
+    async def about():
+        await show_header(db, "About")
         ui.markdown(
             """
 # About

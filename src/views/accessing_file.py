@@ -4,7 +4,7 @@ from pathlib import Path
 import asyncpg
 import fastapi
 import humanize
-from nicegui import app, ui, Client
+from nicegui import app, ui
 
 from ..models import FileRecord, FolderRecord, UserRecord
 from .utils import show_header
@@ -12,7 +12,7 @@ from .utils import show_header
 
 def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
     @ui.page("/folder/{folder_id}/{file_id}")
-    async def accessing_file(folder_id: str, file_id: str, client: Client):
+    async def accessing_file(folder_id: str, file_id: str):
         async with db.acquire() as d:
 
             async def get_file_id(file_id: str):
@@ -36,7 +36,7 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
                 )
                 == 0
             ):
-                await show_header(None, "Listing - Folder - Unknown File", client)
+                await show_header(None, "Listing - Folder - Unknown File")
                 with ui.card().classes("absolute-center"):
                     ui.label("File not found!")
                 ui.notify(
@@ -53,7 +53,7 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
                     record_class=FolderRecord,
                 )
             )[0]
-            await show_header(db, f"Folder {folder.name} - {file.name}", client)
+            await show_header(db, f"Folder {folder.name} - {file.name}")
             with ui.column().classes("w-auto h-auto"):
                 with ui.row().classes("items-center justify-center"):
                     ui.label(f"Folder: {folder.name} ({file.folder})")
