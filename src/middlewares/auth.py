@@ -32,7 +32,7 @@ class AuthMiddleWare(starlette.middleware.base.BaseHTTPMiddleware):
     async def logged_in(self):
         # d: asyncpg.Connection
         tries = 0
-        e = None
+        e = []
         global db
         while tries <= 5:
             try:
@@ -54,5 +54,5 @@ class AuthMiddleWare(starlette.middleware.base.BaseHTTPMiddleware):
                 return True
             except Exception as a:
                 tries += 1
-                e = a
-        raise Exception("Unable to fetch data") from e
+                e.append(a)
+        raise Exception("Unable to fetch data") from ExceptionGroup("Errors while fetching data from database", e)
