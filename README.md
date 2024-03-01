@@ -11,7 +11,7 @@ This project is requested by my mother with problem having no where official to 
 - Python 3.11
 - Poetry
 - ASGI Servers (uvicorn is default)
-- PostgreSQL (please raise your connection limit to something like 200)
+- PostgreSQL 14 (please raise your connection limit to something like 200)
 
 ## Metrics
 
