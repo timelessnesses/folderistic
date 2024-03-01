@@ -30,3 +30,27 @@ FOLDERISTIC_DB=postgres db name
 
 and execute code in `src/types.sql` then you are ready to go
 just start up with `poetry install` and then run it by `poetry run uvicorn src:app`
+
+### Docker (Compose)
+
+```yaml
+services:
+    folderistic:
+        image: ghcr.io/timelessnesses/folderistic:latest
+        environment:
+            - FOLDERISTIC_HOST=db
+            - FOLDERISTIC_USER=folderistic
+            - FOLDERISTIC_PASS=folderistic
+            - FOLDERISTIC_DB=folderistic
+    db:
+        image: postgres:14
+        environment:
+            - POSTGRES_USER=folderistic
+            - POSTGRES_PASSWORD=folderistic
+            - POSTGRES_DB=folderistic
+        volumes:
+            - data:/var/lib/postgresql/data
+volumes:
+    data:
+```
+Copy Paste this code to a file named `compose.yaml` in a folder then run `docker compose run` to run the application
