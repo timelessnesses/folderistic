@@ -27,10 +27,9 @@ from .views.utils import db_ping
 db = asyncpg.create_pool(host=os.getenv("FOLDERISTIC_HOST"), user=os.getenv("FOLDERISTIC_USER"), password=os.getenv("FOLDERISTIC_PASS"), database=os.getenv("FOLDERISTIC_DB"))  # type: ignore
 initialized_db = False
 
-
 @app.on_startup
 async def ls():
-    g = logging.getLogger("folderistic.startup")
+    g = logging.getLogger("uvicorn.error")
     global db, initialized_db
     if not initialized_db:
         try:

@@ -31,14 +31,16 @@ class CustomButtonBuilder:
 
 start = datetime.datetime.now()
 
+is_pinging = False
 
 async def db_ping(db: asyncpg.Pool):
-    global ping
+    global is_pinging
     async with db.acquire() as d:
+        is_pinging = True
         start = time.time()
         await d.fetch("SELECT 1;")
         stop = time.time()
-    # ping = stop - start
+    is_pinging = False
     return stop - start
 
 
@@ -95,7 +97,7 @@ async def show_menu(l: ui.drawer, db: asyncpg.Pool | None):
             )
             
             if role == "admin":
-                def process_broadcast(i: ui.textarea, admin: str):
+                def process_broadcast(i: ui.textarea | ui.input, admin: str):
                     v = i.value
                     def x():
                         ui.notify("Sending broadcasts.", type="ongoing", timeout=2000)
@@ -112,12 +114,12 @@ async def show_menu(l: ui.drawer, db: asyncpg.Pool | None):
                 async def broadcasting():
                     with ui.dialog(value=True), ui.card():
                         ui.label("Please input your messages that you wanted to broadcast.")
-                        a = ui.textarea("Message", placeholder="Please input your messages that you wanted to broadcast.").props("clearable")
+                        a = ui.input('Hello world!').props('type=textarea clearable')
                         ui.button("Submit", on_click=lambda: process_broadcast(a, username))
                 ui.button("Broadcast Message", on_click=broadcasting, color="green")
             async def set_stuff():
                 a.set_text(
-                    f"Database Latency: {(await db_ping(db)) * 1000:.2f} milliseconds"
+                    f"Database Latency: {await db_ping(db) * 1000:.2f} milliseconds" # type: ignore
                 )
                 b.set_text(f"CPU: {cpu()}%")
                 c.set_text(f"Disk: {disk()}%")

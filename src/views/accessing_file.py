@@ -16,14 +16,20 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
         async with db.acquire() as d:
 
             async def get_file_id(file_id: str):
-                file_path = (
-                    await d.fetch(
-                        "SELECT path FROM files WHERE id = $1",
-                        file_id,
-                        record_class=FileRecord,
-                    )
-                )[0]
-                return humanize.naturalsize(Path(file_path.path).stat().st_size)
+                async with db.acquire() as d:
+                    file_path = (
+                        await d.fetch(
+                            "SELECT path FROM files WHERE id = $1",
+                            file_id,
+                            record_class=FileRecord,
+                        )
+                    )[0]
+                try:
+                    return humanize.naturalsize(Path(file_path.path).stat().st_size)
+                except FileNotFoundError:
+                    async with db.acquire() as d:
+                        await d.execute("DELETE FROM files WHERE id = $1", file_id)
+                    ui.open(f"/folder/{folder_id}")
 
             if (
                 len(
@@ -36,7 +42,7 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
                 )
                 == 0
             ):
-                await show_header(None, "Listing - Folder - Unknown File")
+                await show_header(db, "Listing - Folder - Unknown File")
                 with ui.card().classes("absolute-center"):
                     ui.label("File not found!")
                 ui.notify(
@@ -84,7 +90,10 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
 
                     async def delete_file(id: str):
                         os.remove(file.path)
-                        await d.execute("DELETE FROM files WHERE id = $1", id)
+                        async with db.acquire() as d:
+                            await d.execute("DELETE FROM files WHERE id = $1", id)
+                        ui.notify("Successfully deleted a file!")
+                        ui.timer(5, lambda: ui.open(f"/folder/{folder_id}"))
 
                     if user.roles == "admin":
                         ui.button(

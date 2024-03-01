@@ -4,6 +4,7 @@ import io
 import os
 import uuid
 import zipfile
+import copy
 
 import asyncpg
 from nicegui import app, ui
@@ -17,9 +18,27 @@ def install(db: asyncpg.Pool):
     @ui.page("/folder/{folder_id}")
     async def get_contents(folder_id: str):
         async def a():
-            ui.notify("Redirecting back in 3 seconds", type="ongoing")
-            await asyncio.sleep(3)
+            ui.notify("Redirecting back in 5 seconds", type="ongoing")
+            await asyncio.sleep(5)
             ui.open("/")
+        async with db.acquire() as d:
+            role = await d.fetch("SELECT roles FROM users WHERE session = $1", str(app.storage.user["authenticator"]), record_class=UserRecord)
+            is_accessible = await d.fetch("SELECT EXISTS (SELECT 1 FROM folders WHERE id = $2 AND (SELECT username FROM users WHERE session = $1) = ANY(accessers))", str(app.storage.user["authenticator"]), folder_id)
+            if not is_accessible[0]["exists"] or role[0].roles != "admin":
+                await show_header(db, f"Unknown Folder")
+                with ui.card().classes("absolute-center"):
+                    ui.label(
+                        "Folder is not exists!"
+                    )  # .classes("flex flex-col items-center justify-center")
+                    ui.button("Go Back", on_click=a).classes(
+                        "justify-center"
+                    )  # .classes("flex flex-col items-center justify-center")
+                    ui.notify(
+                        "Folder is not exists! Redirecting you in 5 seconds.",
+                        type="negative",
+                    )
+                    ui.timer(5, callback=lambda: ui.open("/"))
+                return
 
         async def create_folders(folders: str):
             try:
@@ -31,7 +50,9 @@ def install(db: asyncpg.Pool):
             except FileExistsError:
                 pass
 
-        async def upload_event(u: UploadEventArguments, n: ui.notification):
+        async def upload_event(u: UploadEventArguments, n: ui.notification | None = None):
+            if not n:
+                n = ui.notification(timeout=None, type="positive")
             file = u.content
             file_id = uuid.uuid4()
             n.spinner = True
@@ -60,8 +81,8 @@ def install(db: asyncpg.Pool):
                     user.username,
                 )
                 n.message = f"Successfully uploaded your file! ({u.name}) Please refresh manually"
-                # ui.timer(3, lambda: ui.open(f"/folder/{folder_id}"))
-                n.dismiss()
+                ui.timer(5, n.dismiss, once=True)
+                ui.timer(5, lambda: ui.open(f"/folder/{folder_id}"))
 
         async def file_upload_popup():
             with ui.dialog(value=True):
@@ -69,11 +90,10 @@ def install(db: asyncpg.Pool):
                     ui.label(
                         "Please drag your files to the box under this text or just click on plus sign."
                     )
-                    n = ui.notification(timeout=None, type="positive")
                     ui.upload(
                         multiple=True,
                         label="Drag your files here or click me!",
-                        on_upload=lambda u: upload_event(u, n),
+                        on_upload=lambda u: upload_event(u),
                     )
 
         async with db.acquire() as d:
@@ -92,7 +112,7 @@ def install(db: asyncpg.Pool):
                         "justify-center"
                     )  # .classes("flex flex-col items-center justify-center")
                     ui.notify(
-                        "Folder is not exists! Redirecting you in 3 seconds.",
+                        "Folder is not exists! Redirecting you in 5 seconds.",
                         type="negative",
                     )
                     ui.timer(5, callback=lambda: ui.open("/"))
@@ -118,7 +138,7 @@ def install(db: asyncpg.Pool):
             async def add_people():
                 with ui.dialog(value=True), ui.card():
                     ui.label(
-                        "Users that have access to this folder (All administrators will have a access to every folder but they may not show up here.)"
+                        "Users that have access to this folder (All administrators will have a access to every folder but they may not show up here.) (Submitting same name that is in accessible users will remove them)"
                     )
                     with ui.element("q-list").props("bordered separator"):
                         async with db.acquire() as d:
@@ -135,37 +155,57 @@ def install(db: asyncpg.Pool):
                                         ui.label(user)
 
                     async def add_user():
-                        usernames: list[str] = username.value.split(",")
+                        usernames: list[str] = username.value.strip().split(",")
+                        remove = []
+                        for u in copy.copy(usernames):
+                            if u in users.accessers:
+                                usernames.remove(u)
+                                remove.append(u)
+                            if not username:
+                                usernames.remove(u)
+                                remove.append(u)
                         async with db.acquire() as d:
                             await d.execute(
                                 """
-                            UPDATE folders
-                            SET accessers = ARRAY(
-                                SELECT DISTINCT unnest
-                                FROM (
-                                    SELECT unnest(accessers) 
-                                    UNION 
-                                    SELECT unnest($2::text[])
-                                ) s
-                            )
-                            WHERE id = $1;
+                                UPDATE folders
+                                SET accessers = ARRAY(
+                                    SELECT DISTINCT unnest
+                                    FROM (
+                                        SELECT unnest(accessers) 
+                                        UNION 
+                                        SELECT unnest($2::text[])
+                                    ) s
+                                )
+                                WHERE id = $1
                                             """,
                                 folder_id,
                                 usernames,
+                            )
+                            await d.execute(
+                                """
+                                UPDATE folders
+                                SET accessers = (
+                                    SELECT array_agg(a)
+                                    FROM (
+                                        SELECT unnest(accessers) AS a
+                                        FROM folders
+                                        WHERE id = $1
+                                    ) AS unnested
+                                    WHERE a <> ALL($2)
+                                )
+                                WHERE id = $1;
+                                """, folder_id, remove
                             )
                             ui.notify(
                                 "Successfully added new users to be able to access this folder!",
                                 type="positive",
                             )
                             ui.timer(3, lambda: ui.open(f"/folder/{folder_id}"))
-
                     async with db.acquire() as d:
-                        users = await d.fetch(
-                            "SELECT username FROM users", record_class=UserRecord
-                        )
+                        usernames = await d.fetch("SELECT username FROM users", record_class=UserRecord)
                     username = ui.input(
                         "Input your username here splitting by commas",
-                        autocomplete=[x.username for x in users],
+                        autocomplete=[x.username for x in usernames],
                     )
                     ui.button("Submit", on_click=add_user)
 
@@ -200,12 +240,8 @@ def install(db: asyncpg.Pool):
                             file_name = name + str(uuid.uuid4()) + ext
                         else:
                             file_name = file.name
-                        with open(file.path, "rb") as fp:
-                            # notification.message = f"Opened {file_name}"
-                            zipper.write(file.path, file_name)
-                            # notification.message = "Wrote to In Memory Zip File"
+                        zipper.write(file.path, file_name)
                 zipped.seek(0)
-                # notification.message = "Seeked back to byte 0"
                 ui.download(zipped.read(), f"{folder[0].name} ({folder[0].id}).zip")
                 notification.message = "Sending download request"
                 notification.spinner = True
