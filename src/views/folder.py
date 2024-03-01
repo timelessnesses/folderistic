@@ -22,9 +22,9 @@ def install(db: asyncpg.Pool):
             await asyncio.sleep(5)
             ui.open("/")
         async with db.acquire() as d:
-            role = await d.fetch("SELECT roles FROM users WHERE session = $1", str(app.storage.user["authenticator"]), record_class=UserRecord)
-            is_accessible = await d.fetch("SELECT EXISTS (SELECT 1 FROM folders WHERE id = $2 AND (SELECT username FROM users WHERE session = $1) = ANY(accessers))", str(app.storage.user["authenticator"]), folder_id)
-            if not is_accessible[0]["exists"] or role[0].roles != "admin":
+            role = await d.fetch("SELECT username, roles FROM users WHERE session = $1", str(app.storage.user["authenticator"]), record_class=UserRecord)
+            accessers = await d.fetch("SELECT accessers FROM folders WHERE id = $1", folder_id, record_class=FolderRecord)
+            if role[0].username not in accessers or role[0].roles != "admin":
                 await show_header(db, f"Inaccessible Folder")
                 with ui.card().classes("absolute-center"):
                     ui.label(
