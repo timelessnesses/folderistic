@@ -25,16 +25,16 @@ def install(db: asyncpg.Pool):
             role = await d.fetch("SELECT roles FROM users WHERE session = $1", str(app.storage.user["authenticator"]), record_class=UserRecord)
             is_accessible = await d.fetch("SELECT EXISTS (SELECT 1 FROM folders WHERE id = $2 AND (SELECT username FROM users WHERE session = $1) = ANY(accessers))", str(app.storage.user["authenticator"]), folder_id)
             if not is_accessible[0]["exists"] or role[0].roles != "admin":
-                await show_header(db, f"Unknown Folder")
+                await show_header(db, f"Inaccessible Folder")
                 with ui.card().classes("absolute-center"):
                     ui.label(
-                        "Folder is not exists!"
+                        "Folder is not accessible!"
                     )  # .classes("flex flex-col items-center justify-center")
                     ui.button("Go Back", on_click=a).classes(
                         "justify-center"
                     )  # .classes("flex flex-col items-center justify-center")
                     ui.notify(
-                        "Folder is not exists! Redirecting you in 5 seconds.",
+                        "Folder is not accessible! Redirecting you in 5 seconds.",
                         type="negative",
                     )
                     ui.timer(5, callback=lambda: ui.open("/"))
