@@ -7,10 +7,10 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = "^3.11"
-uvicorn = "^0.27.1"
+uvicorn = {extras = ["standard"], version = "^0.27.1"}
 fastapi = "^0.109.2"
 python-multipart = "^0.0.9"
-orjson = "^3.9.14"
+orjson = "^3.9.15"
 nicegui = "^1.4.15"
 asyncpg = "^0.29.0"
 bcrypt = "^4.1.2"
@@ -22,6 +22,8 @@ prometheus-fastapi-instrumentator = "^6.1.0"
 prometheus-client = "^0.20.0"
 starlette-exporter = "^0.21.0"
 gc-prometheus = "^0.1.0"
+sqlalchemy = "^2.0.27"
+sqlalchemy-stubs = "^0.4"
 
 
 [tool.poetry.group.dev.dependencies]
