@@ -22,8 +22,7 @@ prometheus-fastapi-instrumentator = "^6.1.0"
 prometheus-client = "^0.20.0"
 starlette-exporter = "^0.21.0"
 gc-prometheus = "^0.1.0"
-sqlalchemy = "^2.0.27"
-sqlalchemy-stubs = "^0.4"
+sqlalchemy = {extras = ["mypy"], version = "^2.0.27"}
 
 
 [tool.poetry.group.dev.dependencies]

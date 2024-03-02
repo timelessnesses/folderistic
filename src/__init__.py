@@ -6,7 +6,6 @@ import threading
 # import typing
 import uuid
 
-import asyncpg
 import fastapi
 import prometheus_client
 import psutil
@@ -23,11 +22,10 @@ import os
 from . import middlewares
 from .views import install
 from .views.utils import db_ping
+from . import model
+from . import db
 
-db = asyncpg.create_pool(host=os.getenv("FOLDERISTIC_HOST"), user=os.getenv("FOLDERISTIC_USER"), password=os.getenv("FOLDERISTIC_PASS"), database=os.getenv("FOLDERISTIC_DB"))  # type: ignore
-print(os.getenv("FOLDERISTIC_DB"))
-initialized_db = False
-
+model.Base.metadata.create_all(bind=db.engine)
 
 @app.on_startup
 async def ls():
