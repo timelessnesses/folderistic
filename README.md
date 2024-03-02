@@ -53,4 +53,4 @@ services:
 volumes:
     data:
 ```
-Copy Paste this code to a file named `compose.yaml` in a folder then run `docker compose run` to run the application
+Copy Paste this code to a file named `compose.yaml` in a folder then run `docker compose up` to run the application
