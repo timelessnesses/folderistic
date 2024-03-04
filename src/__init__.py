@@ -124,9 +124,6 @@ def threads():
     ALIVE = prometheus_client.Gauge("alive_threads", "Threads that is actually alive")
 
     def handle(_: Info):
-        ALIVE.clear()
-        DAEMON.clear()
-        METRIC.clear()
         for thread in threading.enumerate():
             if thread.is_alive():
                 ALIVE.inc()
