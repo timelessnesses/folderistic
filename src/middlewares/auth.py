@@ -1,16 +1,9 @@
-import asyncio
-
-from dotenv import load_dotenv
-
-load_dotenv()
-import os
-
 import asyncpg
 import fastapi
 import starlette.middleware.base
 import starlette.types
-from nicegui import Client, app
-
+from nicegui import Client, app as napp
+import datetime
 
 class AuthMiddleWare(starlette.middleware.base.BaseHTTPMiddleware):
 
@@ -19,6 +12,7 @@ class AuthMiddleWare(starlette.middleware.base.BaseHTTPMiddleware):
     def __init__(self, app: starlette.types.ASGIApp, database: asyncpg.Pool) -> None:
         super().__init__(app, None)
         self.db = database
+        napp.on_disconnect(self.on_disconnect)
 
     async def dispatch(self, request: fastapi.Request, call_next) -> fastapi.Response:
         if not await self.logged_in():
@@ -27,7 +21,14 @@ class AuthMiddleWare(starlette.middleware.base.BaseHTTPMiddleware):
                 and request.url.path not in ["/login", "/failed_auth", "/about"]
             ):
                 return fastapi.responses.RedirectResponse("/failed_auth")
+        async with self.db.acquire() as d:
+            await d.execute("UPDATE users SET first_connected = $2 WHERE session = $1", str(napp.storage.user.get("authenticator")), datetime.datetime.now())
         return await call_next(request)
+    
+    async def on_disconnect(self, client: Client):
+        print(napp.storage.browser)
+        async with self.db.acquire() as d:
+            await d.execute("UPDATE users SET last_connected = $2 WHERE session = $1", str(napp.storage.user.get("authenticator")), datetime.datetime.now())
 
     async def logged_in(self):
         # d: asyncpg.Connection
@@ -36,18 +37,18 @@ class AuthMiddleWare(starlette.middleware.base.BaseHTTPMiddleware):
         global db
         while tries <= 5:
             try:
-                if app.storage.user.get("authenticated", False):
+                if napp.storage.user.get("authenticated", False):
                     if (
                         len(
                             await self.db.fetch(
                                 "SELECT * FROM users WHERE session = $1",
-                                str(app.storage.user.get("authenticator", None)),
+                                str(napp.storage.user.get("authenticator", None)),
                             )
                         )
                         == 0
                     ):
-                        app.storage.user["authenticated"] = False
-                        app.storage.user["authenticated"] = None
+                        napp.storage.user["authenticated"] = False
+                        napp.storage.user["authenticated"] = None
                         return False
                 else:
                     return False
