@@ -3,7 +3,9 @@ CREATE TABLE IF NOT EXISTS users(
     password TEXT,
     salt TEXT,
     session TEXT,
-    roles RolesEnum
+    roles RolesEnum,
+    first_connected TIMESTAMP,
+    last_connected TIMESTAMP
 );
 CREATE TABLE IF NOT EXISTS folders(
     name TEXT,
