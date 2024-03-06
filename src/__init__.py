@@ -38,7 +38,7 @@ def get_commit_id():
             return env
     return "Undetectable"
 
-COMMIT_ID = get_commit_id()
+COMMIT_ID = get_commit_id().replace("\n", "").replace("\r", "")
 
 @app.on_startup
 async def ls():
@@ -164,7 +164,7 @@ def git():
     IS_UP_TO_DATE: bool = requests.get("https://api.github.com/repos/timelessnesses/folderistic/commits/master").json()["sha"] == COMMIT_ID
     def handle(_: Info):
         THING.info({
-            "COMMIT": COMMIT_ID.replace("\n", "").replace("\r", ""),
+            "COMMIT": COMMIT_ID,
             "DOCKER": str(DOCKER),
             "UTD": str(IS_UP_TO_DATE)
         })
