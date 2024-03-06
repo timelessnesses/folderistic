@@ -1,14 +1,32 @@
 import asyncio
 import datetime
 import time
+import requests
+import subprocess
 import typing
+from dotenv import load_dotenv
+load_dotenv()
+import os
 
 import asyncpg
 import psutil
-from nicegui import app, ui, App, Client
+from nicegui import app, ui, Client
 
 from ..models import UserRecord
-    
+
+def get_commit_id():
+    try:
+        if git := subprocess.check_output("git rev-parse HEAD", shell=True):
+            return git.decode()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        if env := os.getenv("FOLDERISTIC_COMMIT_ID"):
+            return env
+    return "Undetectable"
+
+COMMIT_ID = get_commit_id().replace("\n", "").replace("\r", "")
+DOCKER = bool(os.getenv("FOLDERISTIC_DOCKER", 0))
+IS_UP_TO_DATE: bool = requests.get("https://api.github.com/repos/timelessnesses/folderistic/commits/master").json()["sha"] == COMMIT_ID
+
 class CustomButtonBuilder:
     """
     A custom button builder to be used in functions.
@@ -138,6 +156,8 @@ async def show_menu(l: ui.drawer, db: asyncpg.Pool | None):
         else:
             ui.button("Login", on_click=lambda: ui.open("/login"))
         ui.button("About", on_click=lambda: ui.open("/about"))
+        ui.link(f"Commit ID: {COMMIT_ID[:7]} {'' if IS_UP_TO_DATE else '⚠️ New update available.'}", f"https://github.com/timelessnesses/folderistic/commit/{COMMIT_ID}")
+        ui.label(f"Dockerized: {DOCKER}")
 
     def h():
         l.toggle()
