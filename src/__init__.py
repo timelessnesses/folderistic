@@ -31,9 +31,9 @@ initialized_db = False
 
 def get_commit_id():
     try:
-        if git := subprocess.check_output("git rev-parse --short HEAD"):
+        if git := subprocess.check_output("git rev-parse HEAD"):
             return git.decode()
-    except subprocess.CalledProcessError:
+    except (subprocess.CalledProcessError, FileNotFoundError):
         if env := os.getenv("FOLDERISTIC_COMMIT_ID"):
             return env
     return "Undetectable"
