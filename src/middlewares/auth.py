@@ -25,10 +25,11 @@ class AuthMiddleWare(starlette.middleware.base.BaseHTTPMiddleware):
             await d.execute("UPDATE users SET first_connected = $2 WHERE session = $1", str(napp.storage.user.get("authenticator")), datetime.datetime.now())
         return await call_next(request)
     
-    async def on_disconnect(self, client: Client):
-        print(napp.storage.browser)
-        async with self.db.acquire() as d:
-            await d.execute("UPDATE users SET last_connected = $2 WHERE session = $1", str(napp.storage.user.get("authenticator")), datetime.datetime.now())
+    async def on_disconnect(self, client: Client): # !!!: REMINDER: This does NOT work! See https://github.com/zauberzeug/nicegui/discussions/2662 for progress about this. I am not DRYing my code with `await client.disconnected()`
+        # print(napp.storage.browser)
+        # async with self.db.acquire() as d:
+        #    await d.execute("UPDATE users SET last_connected = $2 WHERE session = $1", str(napp.storage.user.get("authenticator")), datetime.datetime.now())
+        pass
 
     async def logged_in(self):
         # d: asyncpg.Connection

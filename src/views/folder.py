@@ -22,10 +22,24 @@ def install(db: asyncpg.Pool):
             await asyncio.sleep(5)
             ui.open("/")
         async with db.acquire() as d:
+            if not len(await d.fetch("SELECT 1 FROM folders WHERE id = $1", folder_id, record_class=FolderRecord)):
+                await show_header(None, f"Unknown Folder")
+                with ui.card().classes("absolute-center"):
+                    ui.label(
+                        "Folder is not exists!"
+                    )  # .classes("flex flex-col items-center justify-center")
+                    ui.button("Go Back", on_click=a).classes(
+                        "justify-center"
+                    )  # .classes("flex flex-col items-center justify-center")
+                    ui.notify(
+                        "Folder is not exists! Redirecting you in 5 seconds.",
+                        type="negative",
+                    )
+                    ui.timer(5, callback=lambda: ui.open("/"))
+                return
+        async with db.acquire() as d:
             role = await d.fetch("SELECT username, roles FROM users WHERE session = $1", str(app.storage.user["authenticator"]), record_class=UserRecord)
             accessers = await d.fetch("SELECT accessers FROM folders WHERE id = $1", folder_id, record_class=FolderRecord)
-            print(role, accessers)
-            print(role[0].roles == "admin", role[0].username in accessers[0].accessers)
             if role[0].username not in accessers[0].accessers and role[0].roles != "admin":
                 await show_header(db, f"Inaccessible Folder")
                 with ui.card().classes("absolute-center"):
@@ -99,26 +113,7 @@ def install(db: asyncpg.Pool):
                     )
 
         async with db.acquire() as d:
-            folder = await d.fetch(
-                "SELECT * FROM folders WHERE id = $1",
-                folder_id,
-                record_class=FolderRecord,
-            )
-            if len(folder) == 0:
-                await show_header(None, f"Unknown Folder")
-                with ui.card().classes("absolute-center"):
-                    ui.label(
-                        "Folder is not exists!"
-                    )  # .classes("flex flex-col items-center justify-center")
-                    ui.button("Go Back", on_click=a).classes(
-                        "justify-center"
-                    )  # .classes("flex flex-col items-center justify-center")
-                    ui.notify(
-                        "Folder is not exists! Redirecting you in 5 seconds.",
-                        type="negative",
-                    )
-                    ui.timer(5, callback=lambda: ui.open("/"))
-                return
+            folder = await d.fetch("SELECT * FROM folders WHERE id = $1", folder_id, record_class=FolderRecord)
             files = await d.fetch(
                 "SELECT * FROM files WHERE folder = $1",
                 folder_id,
@@ -130,10 +125,30 @@ def install(db: asyncpg.Pool):
                 record_class=UserRecord,
             )
             buttons: list[CustomButtonBuilder] = []
+            async def delete_folder():
+                async with db.acquire() as d:
+                    await d.execute("DELETE FROM folders WHERE id = $1", folder_id)
+                    for file in await d.fetch("SELECT id, path FROM files WHERE folder = $1", folder_id, record_class=FileRecord):
+                        try:
+                            os.remove(file.path)
+                        except:
+                            pass
+                    try:
+                        os.rmdir(f"files/{folder_id}")
+                    except:
+                        pass
+                ui.notify("Successfully deleted all the files", type="positive")
+                ui.open("/")
             if role[0].roles in ["admin", "uploaders"]:
                 buttons.append(
                     CustomButtonBuilder(on_click=file_upload_popup).props(
                         "flat color=white icon=file_upload"
+                    )
+                )
+            if role[0].roles == "admin":
+                buttons.append(
+                    CustomButtonBuilder(on_click=delete_folder).props(
+                        "flat color=white icon=folder_delete"
                     )
                 )
 

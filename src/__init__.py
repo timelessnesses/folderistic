@@ -5,6 +5,7 @@ import threading
 # import contextlib
 # import typing
 import uuid
+import subprocess
 
 import asyncpg
 import fastapi
@@ -15,6 +16,7 @@ from dotenv import load_dotenv
 from nicegui import app, ui, Client
 from prometheus_fastapi_instrumentator import Instrumentator, metrics
 from prometheus_fastapi_instrumentator.metrics import Info
+import requests
 
 load_dotenv()
 import logging
@@ -26,6 +28,17 @@ from .views.utils import db_ping
 
 db = asyncpg.create_pool(host=os.getenv("FOLDERISTIC_HOST"), user=os.getenv("FOLDERISTIC_USER"), password=os.getenv("FOLDERISTIC_PASS"), database=os.getenv("FOLDERISTIC_DB"))  # type: ignore
 initialized_db = False
+
+def get_commit_id():
+    try:
+        if git := subprocess.check_output("git rev-parse --short HEAD"):
+            return git.decode()
+    except subprocess.CalledProcessError:
+        if env := os.getenv("FOLDERISTIC_COMMIT_ID"):
+            return env
+    return "Undetectable"
+
+COMMIT_ID = get_commit_id()
 
 @app.on_startup
 async def ls():
@@ -144,6 +157,18 @@ def users():
             ALL.set(count[0]["count"])
 
     return handle
+
+def git():
+    THING = prometheus_client.Info("git_info", "Information about version")
+    DOCKER = bool(os.getenv("FOLDERISTIC_DOCKER", 0))
+    IS_UP_TO_DATE: bool = requests.get("https://api.github.com/repos/timelessnesses/folderistic/commits/master").json()["sha"] == COMMIT_ID
+    def handle(_: Info):
+        THING.info({
+            "COMMIT": COMMIT_ID.replace("\n", "").replace("\r", ""),
+            "DOCKER": str(DOCKER),
+            "UTD": str(IS_UP_TO_DATE)
+        })
+    return handle
 def thingy(app: fastapi.FastAPI):
     prometheus = Instrumentator(should_instrument_requests_inprogress=True)
     prometheus.add(db_latency())
@@ -152,6 +177,7 @@ def thingy(app: fastapi.FastAPI):
     prometheus.add(cpu_usage())
     prometheus.add(threads())
     prometheus.add(users())
+    prometheus.add(git())
     prometheus.add(metrics.latency())
     prometheus.add(metrics.requests())
 
