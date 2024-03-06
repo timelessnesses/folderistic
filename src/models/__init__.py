@@ -33,10 +33,10 @@ class UserRecord(RecordWithGetAttributeIncluded):
 
     roles: typing.Literal["admin", "uploaders", "viewers"]
     "Role of the user"
-    
+
     first_connected: datetime.datetime
     "When user establishes a connection to the server"
-    
+
     last_connected: datetime.datetime
     "When the user is last seen online"
 

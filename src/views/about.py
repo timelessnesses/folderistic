@@ -1,6 +1,6 @@
 import asyncpg
 import fastapi
-from nicegui import ui, Client
+from nicegui import Client, ui
 
 from .utils import show_header
 

@@ -1,19 +1,22 @@
 import asyncio
 import datetime
-import time
-import requests
 import subprocess
+import time
 import typing
+
+import requests
 from dotenv import load_dotenv
+
 load_dotenv()
 import os
 
+import aiohttp
 import asyncpg
 import psutil
-from nicegui import app, ui, Client
-import aiohttp
+from nicegui import Client, app, ui
 
 from ..models import UserRecord
+
 
 def get_commit_id():
     try:
@@ -24,19 +27,25 @@ def get_commit_id():
             return env
     return "Undetectable"
 
+
 COMMIT_ID = get_commit_id().replace("\n", "").replace("\r", "")
 DOCKER = bool(os.getenv("FOLDERISTIC_DOCKER", 0))
 IS_UP_TO_DATE = False
+
 
 async def check_up_to_date():
     global IS_UP_TO_DATE
     while True:
         async with aiohttp.ClientSession() as c:
-            async with c.get("https://api.github.com/repos/timelessnesses/folderistic/commits/master") as r:
+            async with c.get(
+                "https://api.github.com/repos/timelessnesses/folderistic/commits/master"
+            ) as r:
                 IS_UP_TO_DATE = (await r.json())["sha"] == COMMIT_ID
         await asyncio.sleep(60)
-        
+
+
 asyncio.create_task(check_up_to_date())
+
 
 class CustomButtonBuilder:
     """
@@ -61,6 +70,7 @@ class CustomButtonBuilder:
 start = datetime.datetime.now()
 
 is_pinging = False
+
 
 async def db_ping(db: asyncpg.Pool):
     global is_pinging
@@ -125,31 +135,43 @@ async def show_menu(l: ui.drawer, db: asyncpg.Pool | None):
             ui.label(f"User: {username} Role: {role.capitalize()}").style(
                 "font-size: 15px"
             )
-            
+
             if role == "admin":
+
                 def process_broadcast(i: ui.textarea | ui.input, admin: str):
                     v = i.value
+
                     def x():
                         ui.notify("Sending broadcasts.", type="ongoing", timeout=2000)
                         for client in Client.instances.values():
                             with client:
                                 with ui.dialog(value=True), ui.card():
-                                    ui.markdown(f"""
+                                    ui.markdown(
+                                        f"""
                                                 # Broadcasting
                                                 Administrator {admin} has sent you a message<br>
                                                 {v}
-                                                """)
+                                                """
+                                    )
                         ui.notify("Sent broadcasts!", type="positive")
-                    x()   
+
+                    x()
+
                 async def broadcasting():
                     with ui.dialog(value=True), ui.card():
-                        ui.label("Please input your messages that you wanted to broadcast.")
-                        a = ui.input('Hello world!').props('type=textarea clearable')
-                        ui.button("Submit", on_click=lambda: process_broadcast(a, username))
+                        ui.label(
+                            "Please input your messages that you wanted to broadcast."
+                        )
+                        a = ui.input("Hello world!").props("type=textarea clearable")
+                        ui.button(
+                            "Submit", on_click=lambda: process_broadcast(a, username)
+                        )
+
                 ui.button("Broadcast Message", on_click=broadcasting, color="green")
+
             async def set_stuff():
                 a.set_text(
-                    f"Database Latency: {await db_ping(db) * 1000:.2f} milliseconds" # type: ignore
+                    f"Database Latency: {await db_ping(db) * 1000:.2f} milliseconds"  # type: ignore
                 )
                 b.set_text(f"CPU: {cpu()}%")
                 c.set_text(f"Disk: {disk()}%")
@@ -168,7 +190,10 @@ async def show_menu(l: ui.drawer, db: asyncpg.Pool | None):
         else:
             ui.button("Login", on_click=lambda: ui.open("/login"))
         ui.button("About", on_click=lambda: ui.open("/about"))
-        ui.link(f"Commit ID: {COMMIT_ID[:7]} {'' if IS_UP_TO_DATE else '⚠️ New update available.'}", f"https://github.com/timelessnesses/folderistic/commit/{COMMIT_ID}")
+        ui.link(
+            f"Commit ID: {COMMIT_ID[:7]} {'' if IS_UP_TO_DATE else '⚠️ New update available.'}",
+            f"https://github.com/timelessnesses/folderistic/commit/{COMMIT_ID}",
+        )
         ui.label(f"Dockerized: {DOCKER}")
 
     def h():

@@ -1,9 +1,12 @@
+import datetime
+
 import asyncpg
 import fastapi
 import starlette.middleware.base
 import starlette.types
-from nicegui import Client, app as napp
-import datetime
+from nicegui import Client
+from nicegui import app as napp
+
 
 class AuthMiddleWare(starlette.middleware.base.BaseHTTPMiddleware):
 
@@ -22,10 +25,16 @@ class AuthMiddleWare(starlette.middleware.base.BaseHTTPMiddleware):
             ):
                 return fastapi.responses.RedirectResponse("/failed_auth")
         async with self.db.acquire() as d:
-            await d.execute("UPDATE users SET first_connected = $2 WHERE session = $1", str(napp.storage.user.get("authenticator")), datetime.datetime.now())
+            await d.execute(
+                "UPDATE users SET first_connected = $2 WHERE session = $1",
+                str(napp.storage.user.get("authenticator")),
+                datetime.datetime.now(),
+            )
         return await call_next(request)
-    
-    async def on_disconnect(self, client: Client): # !!!: REMINDER: This does NOT work! See https://github.com/zauberzeug/nicegui/discussions/2662 for progress about this. I am not DRYing my code with `await client.disconnected()`
+
+    async def on_disconnect(
+        self, client: Client
+    ):  # !!!: REMINDER: This does NOT work! See https://github.com/zauberzeug/nicegui/discussions/2662 for progress about this. I am not DRYing my code with `await client.disconnected()`
         # print(napp.storage.browser)
         # async with self.db.acquire() as d:
         #    await d.execute("UPDATE users SET last_connected = $2 WHERE session = $1", str(napp.storage.user.get("authenticator")), datetime.datetime.now())
@@ -57,4 +66,6 @@ class AuthMiddleWare(starlette.middleware.base.BaseHTTPMiddleware):
             except Exception as a:
                 tries += 1
                 e.append(a)
-        raise Exception("Unable to fetch data") from ExceptionGroup("Errors while fetching data from database", e)
+        raise Exception("Unable to fetch data") from ExceptionGroup(
+            "Errors while fetching data from database", e
+        )

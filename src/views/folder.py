@@ -1,10 +1,10 @@
 import asyncio
+import copy
 import datetime
 import io
 import os
 import uuid
 import zipfile
-import copy
 
 import asyncpg
 from nicegui import app, ui
@@ -21,8 +21,15 @@ def install(db: asyncpg.Pool):
             ui.notify("Redirecting back in 5 seconds", type="ongoing")
             await asyncio.sleep(5)
             ui.open("/")
+
         async with db.acquire() as d:
-            if not len(await d.fetch("SELECT 1 FROM folders WHERE id = $1", folder_id, record_class=FolderRecord)):
+            if not len(
+                await d.fetch(
+                    "SELECT 1 FROM folders WHERE id = $1",
+                    folder_id,
+                    record_class=FolderRecord,
+                )
+            ):
                 await show_header(None, f"Unknown Folder")
                 with ui.card().classes("absolute-center"):
                     ui.label(
@@ -38,9 +45,20 @@ def install(db: asyncpg.Pool):
                     ui.timer(5, callback=lambda: ui.open("/"))
                 return
         async with db.acquire() as d:
-            role = await d.fetch("SELECT username, roles FROM users WHERE session = $1", str(app.storage.user["authenticator"]), record_class=UserRecord)
-            accessers = await d.fetch("SELECT accessers FROM folders WHERE id = $1", folder_id, record_class=FolderRecord)
-            if role[0].username not in accessers[0].accessers and role[0].roles != "admin":
+            role = await d.fetch(
+                "SELECT username, roles FROM users WHERE session = $1",
+                str(app.storage.user["authenticator"]),
+                record_class=UserRecord,
+            )
+            accessers = await d.fetch(
+                "SELECT accessers FROM folders WHERE id = $1",
+                folder_id,
+                record_class=FolderRecord,
+            )
+            if (
+                role[0].username not in accessers[0].accessers
+                and role[0].roles != "admin"
+            ):
                 await show_header(db, f"Inaccessible Folder")
                 with ui.card().classes("absolute-center"):
                     ui.label(
@@ -66,7 +84,9 @@ def install(db: asyncpg.Pool):
             except FileExistsError:
                 pass
 
-        async def upload_event(u: UploadEventArguments, n: ui.notification | None = None):
+        async def upload_event(
+            u: UploadEventArguments, n: ui.notification | None = None
+        ):
             if not n:
                 n = ui.notification(timeout=None, type="positive")
             file = u.content
@@ -113,7 +133,11 @@ def install(db: asyncpg.Pool):
                     )
 
         async with db.acquire() as d:
-            folder = await d.fetch("SELECT * FROM folders WHERE id = $1", folder_id, record_class=FolderRecord)
+            folder = await d.fetch(
+                "SELECT * FROM folders WHERE id = $1",
+                folder_id,
+                record_class=FolderRecord,
+            )
             files = await d.fetch(
                 "SELECT * FROM files WHERE folder = $1",
                 folder_id,
@@ -125,10 +149,15 @@ def install(db: asyncpg.Pool):
                 record_class=UserRecord,
             )
             buttons: list[CustomButtonBuilder] = []
+
             async def delete_folder():
                 async with db.acquire() as d:
                     await d.execute("DELETE FROM folders WHERE id = $1", folder_id)
-                    for file in await d.fetch("SELECT id, path FROM files WHERE folder = $1", folder_id, record_class=FileRecord):
+                    for file in await d.fetch(
+                        "SELECT id, path FROM files WHERE folder = $1",
+                        folder_id,
+                        record_class=FileRecord,
+                    ):
                         try:
                             os.remove(file.path)
                         except:
@@ -139,6 +168,7 @@ def install(db: asyncpg.Pool):
                         pass
                 ui.notify("Successfully deleted all the files", type="positive")
                 ui.open("/")
+
             if role[0].roles in ["admin", "uploaders"]:
                 buttons.append(
                     CustomButtonBuilder(on_click=file_upload_popup).props(
@@ -211,15 +241,20 @@ def install(db: asyncpg.Pool):
                                     WHERE a <> ALL($2)
                                 )
                                 WHERE id = $1;
-                                """, folder_id, remove
+                                """,
+                                folder_id,
+                                remove,
                             )
                             ui.notify(
                                 "Successfully added new users to be able to access this folder!",
                                 type="positive",
                             )
                             ui.timer(3, lambda: ui.open(f"/folder/{folder_id}"))
+
                     async with db.acquire() as d:
-                        usernames = await d.fetch("SELECT username FROM users", record_class=UserRecord)
+                        usernames = await d.fetch(
+                            "SELECT username FROM users", record_class=UserRecord
+                        )
                     username = ui.input(
                         "Input your username here splitting by commas",
                         autocomplete=[x.username for x in usernames],
