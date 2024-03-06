@@ -11,6 +11,7 @@ import os
 import asyncpg
 import psutil
 from nicegui import app, ui, Client
+import aiohttp
 
 from ..models import UserRecord
 
@@ -25,7 +26,17 @@ def get_commit_id():
 
 COMMIT_ID = get_commit_id().replace("\n", "").replace("\r", "")
 DOCKER = bool(os.getenv("FOLDERISTIC_DOCKER", 0))
-IS_UP_TO_DATE: bool = requests.get("https://api.github.com/repos/timelessnesses/folderistic/commits/master").json()["sha"] == COMMIT_ID
+IS_UP_TO_DATE = False
+
+async def check_up_to_date():
+    global IS_UP_TO_DATE
+    while True:
+        async with aiohttp.ClientSession() as c:
+            async with c.get("https://api.github.com/repos/timelessnesses/folderistic/commits/master") as r:
+                IS_UP_TO_DATE = (await r.json())["sha"] == COMMIT_ID
+        await asyncio.sleep(60)
+        
+asyncio.create_task(check_up_to_date())
 
 class CustomButtonBuilder:
     """
@@ -71,6 +82,7 @@ def disk():
 
 
 async def show_menu(l: ui.drawer, db: asyncpg.Pool | None):
+    global IS_UP_TO_DATE
     """Showing menu in header
 
     Args:
