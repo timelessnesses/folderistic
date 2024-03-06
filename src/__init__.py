@@ -159,7 +159,7 @@ def users():
     return handle
 
 def git():
-    THING = prometheus_client.Info("git_info", "Information about version")
+    THING = prometheus_client.Info("git_info", "Information about version",)
     DOCKER = bool(os.getenv("FOLDERISTIC_DOCKER", 0))
     IS_UP_TO_DATE: bool = requests.get("https://api.github.com/repos/timelessnesses/folderistic/commits/master").json()["sha"] == COMMIT_ID
     def handle(_: Info):
