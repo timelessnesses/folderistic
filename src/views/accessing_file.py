@@ -80,6 +80,9 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
                     ui.button(
                         f"Download ({await get_file_id(file.id)})", on_click=download
                     )
+                    ui.button(
+                        f"View", on_click=lambda: ui.navigate.to(f"/folder/{folder_id}/{file_id}/view", True)
+                    ).props("color=pink")
                     user = (
                         await d.fetch(
                             "SELECT * from users WHERE session = $1",
@@ -114,3 +117,18 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
                 )
             )[0]
             return fastapi.responses.FileResponse(file.path, filename=file.name)
+        
+    @fapp.get("/folder/{folder_id}/{file_id}/view")
+    async def viewery(
+        folder_id: str, file_id: str
+    ) -> fastapi.responses.FileResponse:
+        async with db.acquire() as d:
+            file = (
+                await d.fetch(
+                    "SELECT * FROM files WHERE id = $1 AND folder = $2",
+                    file_id,
+                    folder_id,
+                    record_class=FileRecord,
+                )
+            )[0]
+            return fastapi.responses.FileResponse(file.path, filename=file.name, content_disposition_type="inline")
