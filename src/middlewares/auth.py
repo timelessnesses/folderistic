@@ -58,7 +58,7 @@ class AuthMiddleWare(starlette.middleware.base.BaseHTTPMiddleware):
                         == 0
                     ):
                         napp.storage.user["authenticated"] = False
-                        napp.storage.user["authenticated"] = None
+                        napp.storage.user["authenticator"] = None
                         return False
                 else:
                     return False
