@@ -47,7 +47,7 @@ def install(db: asyncpg.Pool):
             str(app.storage.user.get("authenticator")),
             record_class=UserRecord,
         )
-        if role[0].roles in ["admin", "uploaders"]:
+        if role[0].roles in ["admin"]:
             buttons = [
                 CustomButtonBuilder(popup_thigmajig()).props(
                     "flat color=white icon=create_new_folder"
