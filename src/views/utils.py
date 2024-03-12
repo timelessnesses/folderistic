@@ -32,7 +32,6 @@ COMMIT_ID = get_commit_id().replace("\n", "").replace("\r", "")
 DOCKER = bool(os.getenv("FOLDERISTIC_DOCKER", 0))
 IS_UP_TO_DATE = False
 
-
 async def check_up_to_date():
     global IS_UP_TO_DATE
     while True:
@@ -41,6 +40,7 @@ async def check_up_to_date():
                 "https://api.github.com/repos/timelessnesses/folderistic/commits/master"
             ) as r:
                 IS_UP_TO_DATE = (await r.json())["sha"] == COMMIT_ID
+        print(f"Checked Update {IS_UP_TO_DATE=}")
         await asyncio.sleep(60)
 
 
