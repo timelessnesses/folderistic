@@ -9,28 +9,33 @@ from nicegui import app, ui
 from ..models import FileRecord, FolderRecord, UserRecord
 from .utils import show_header
 
+async def get_file_id(db: asyncpg.Pool, folder_id: str, file_id: str):
+    async with db.acquire() as d:
+        file_path = (
+            await d.fetch(
+                "SELECT path FROM files WHERE id = $1",
+                file_id,
+                record_class=FileRecord,
+            )
+        )[0]
+    try:
+        return humanize.naturalsize(Path(file_path.path).stat().st_size)
+    except FileNotFoundError:
+        async with db.acquire() as d:
+            await d.execute("DELETE FROM files WHERE id = $1", file_id)
+        ui.navigate.to(f"/folder/{folder_id}")
+        
+async def delete_file(db: asyncpg.Pool, folder_id: str, file: FileRecord):
+    os.remove(file.path)
+    async with db.acquire() as d:
+        await d.execute("DELETE FROM files WHERE id = $1", file.id)
+    ui.notify("Successfully deleted a file!")
+    ui.timer(5, lambda: ui.navigate.to(f"/folder/{folder_id}"))
 
 def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
     @ui.page("/folder/{folder_id}/{file_id}")
     async def accessing_file(folder_id: str, file_id: str):
         async with db.acquire() as d:
-
-            async def get_file_id(file_id: str):
-                async with db.acquire() as d:
-                    file_path = (
-                        await d.fetch(
-                            "SELECT path FROM files WHERE id = $1",
-                            file_id,
-                            record_class=FileRecord,
-                        )
-                    )[0]
-                try:
-                    return humanize.naturalsize(Path(file_path.path).stat().st_size)
-                except FileNotFoundError:
-                    async with db.acquire() as d:
-                        await d.execute("DELETE FROM files WHERE id = $1", file_id)
-                    ui.open(f"/folder/{folder_id}")
-
             if (
                 len(
                     x := await d.fetch(
@@ -49,7 +54,7 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
                     "File not found! Redirect back to folder in 3 seconds",
                     type="negative",
                 )
-                ui.timer(3, lambda: ui.open(f"/folder/{folder_id}"))
+                ui.timer(3, lambda: ui.navigate.to(f"/folder/{folder_id}"))
                 return
             file = x[0]
             folder = (
@@ -78,7 +83,7 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
                         )
 
                     ui.button(
-                        f"Download ({await get_file_id(file.id)})", on_click=download
+                        f"Download ({await get_file_id(db, folder_id, file.id)})", on_click=download
                     )
                     ui.button(
                         f"View", on_click=lambda: ui.navigate.to(f"/folder/{folder_id}/{file_id}/view", True)
@@ -91,16 +96,9 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
                         )
                     )[0]
 
-                    async def delete_file(id: str):
-                        os.remove(file.path)
-                        async with db.acquire() as d:
-                            await d.execute("DELETE FROM files WHERE id = $1", id)
-                        ui.notify("Successfully deleted a file!")
-                        ui.timer(5, lambda: ui.open(f"/folder/{folder_id}"))
-
                     if user.roles == "admin":
                         ui.button(
-                            f"Delete", on_click=lambda: delete_file(file.id)
+                            f"Delete", on_click=lambda: delete_file(db, folder_id, file)
                         ).props("color=red")
 
     @fapp.get("/folder/{folder_id}/{file_id}/download")

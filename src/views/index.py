@@ -36,7 +36,7 @@ def install(db: asyncpg.Pool):
                     )
                     ui.notify("Refreshing in 2 seconds", type="ongoing")
                     await asyncio.sleep(2)
-                    ui.open("/")
+                    ui.navigate.to("/")
 
                 ui.button("Submit", on_click=create_new_folder)
             return dialog.open
@@ -83,7 +83,7 @@ def install(db: asyncpg.Pool):
                         def v(
                             j=j,
                         ):
-                            ui.open(f"/folder/{j}")
+                            ui.navigate.to(f"/folder/{j}")
 
                         with ui.button(on_click=v).classes(
                             "flex flex-col items-center justify-center"

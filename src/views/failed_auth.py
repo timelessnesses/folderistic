@@ -18,4 +18,4 @@ def install(_: asyncpg.Pool):
                 "You are NOT authorized! Please login. We will redirect you in 3 seconds",
                 type="negative",
             )
-            ui.timer(3, lambda: ui.open("/login"), once=True)
+            ui.timer(3, lambda: ui.navigate.to("/login"), once=True)

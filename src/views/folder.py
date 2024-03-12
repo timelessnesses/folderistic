@@ -15,6 +15,15 @@ import starlette.background
 from ..models import FileRecord, FolderRecord, UserRecord
 from .utils import CustomButtonBuilder, show_header
 
+async def create_folders(folders: str):
+    try:
+        os.mkdir("files")
+    except FileExistsError:
+        pass
+    try:
+        os.mkdir(folders)
+    except FileExistsError:
+        pass
 
 def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
     @ui.page("/folder/{folder_id}")
@@ -22,7 +31,7 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
         async def a():
             ui.notify("Redirecting back in 5 seconds", type="ongoing")
             await asyncio.sleep(5)
-            ui.open("/")
+            ui.navigate.to("/")
 
         async with db.acquire() as d:
             if not len(
@@ -44,7 +53,7 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
                         "Folder is not exists! Redirecting you in 5 seconds.",
                         type="negative",
                     )
-                    ui.timer(5, callback=lambda: ui.open("/"))
+                    ui.timer(5, callback=lambda: ui.navigate.to("/"))
                 return
         async with db.acquire() as d:
             role = await d.fetch(
@@ -73,18 +82,8 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
                         "Folder is not accessible! Redirecting you in 5 seconds.",
                         type="negative",
                     )
-                    ui.timer(5, callback=lambda: ui.open("/"))
+                    ui.timer(5, callback=lambda: ui.navigate.to("/"))
                 return
-
-        async def create_folders(folders: str):
-            try:
-                os.mkdir("files")
-            except FileExistsError:
-                pass
-            try:
-                os.mkdir(folders)
-            except FileExistsError:
-                pass
 
         async def upload_event(
             u: UploadEventArguments, n: ui.notification | None = None
@@ -120,7 +119,7 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
                 )
                 n.message = f"Successfully uploaded your file! ({u.name}) Please refresh manually"
                 ui.timer(5, n.dismiss, once=True)
-                ui.timer(5, lambda: ui.open(f"/folder/{folder_id}"))
+                ui.timer(5, lambda: ui.navigate.to(f"/folder/{folder_id}"))
 
         async def file_upload_popup():
             with ui.dialog(value=True):
@@ -169,7 +168,7 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
                     except:
                         pass
                 ui.notify("Successfully deleted all the files", type="positive")
-                ui.open("/")
+                ui.navigate.to("/")
 
             if role[0].roles in ["admin", "uploaders"]:
                 buttons.append(
@@ -251,7 +250,7 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
                                 "Successfully added new users to be able to access this folder!",
                                 type="positive",
                             )
-                            ui.timer(3, lambda: ui.open(f"/folder/{folder_id}"))
+                            ui.timer(3, lambda: ui.navigate.to(f"/folder/{folder_id}"))
 
                     async with db.acquire() as d:
                         usernames = await d.fetch(
@@ -278,21 +277,23 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
                 with zipfile.ZipFile(
                     f"files/{folder_id}.zip", "w", zipfile.ZIP_LZMA, True
                 ) as zipper:
-                    # notification.message = "Getting all files in the folder"
+                    notification.message = "Getting all files in the folder"
                     async with db.acquire() as d:
                         files = await d.fetch(
                             "SELECT * from files WHERE folder = $1",
                             folder_id,
                             record_class=FileRecord,
                         )
-                    # notification.message = "Successfully got all files"
+                    notification.message = "Successfully got all files"
                     file_names = []
                     for file in files:
+                        notification.message = f"Processing {file.name}"
                         if file.name in file_names:
                             name, ext = os.path.splitext(file.name)
                             file_name = name + str(uuid.uuid4()) + ext
                         else:
                             file_name = file.name
+                        notification.message = f"Writing {file.name} to zip"
                         zipper.write(file.path, file_name)
                 notification.message = "Sending download request"
                 ui.navigate.to(f"/folder/{folder_id}/zipped", True)
@@ -318,7 +319,7 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
                         def v(
                             j=j,
                         ):  # This captures the current value of `j` for each iteration
-                            ui.open(f"/folder/{folder_id}/{j}")
+                            ui.navigate.to(f"/folder/{folder_id}/{j}")
 
                         with ui.button(on_click=v).classes(
                             "flex flex-col items-center justify-center"

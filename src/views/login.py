@@ -51,7 +51,7 @@ def install(db: asyncpg.Pool):
                 await d.execute(
                     "UPDATE users SET session = $2 WHERE username = $1", u, str(id)
                 )
-            ui.open("/")
+            ui.navigate.to("/")
 
         if app.storage.user.get("authenticated", False):
             # d: asyncpg.Connection
@@ -67,7 +67,7 @@ def install(db: asyncpg.Pool):
                         )
                         != 0
                     ):
-                        ui.open("/")
+                        ui.navigate.to("/")
                         return
         await show_header(db, "Login")
         with ui.card().classes("absolute-center"):

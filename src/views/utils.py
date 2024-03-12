@@ -113,7 +113,7 @@ async def show_menu(l: ui.drawer, db: asyncpg.Pool | None):
                     await asyncio.sleep(3)
             app.storage.user["authenticated"] = False
             app.storage.user["authenticator"] = None
-            ui.open("/login")
+            ui.navigate.to("/login")
 
     else:
 
@@ -121,7 +121,7 @@ async def show_menu(l: ui.drawer, db: asyncpg.Pool | None):
 
     with l:
         ui.link("📂 Folderistic").style("font-size: 25px").on(
-            "click", lambda: ui.open("/")
+            "click", lambda: ui.navigate.to("/")
         )
         if app.storage.user.get("authenticated", None) and db is not None:
 
@@ -188,8 +188,8 @@ async def show_menu(l: ui.drawer, db: asyncpg.Pool | None):
             ui.timer(1, set_stuff)
             ui.button("Logout", on_click=logout, color="red")
         else:
-            ui.button("Login", on_click=lambda: ui.open("/login"))
-        ui.button("About", on_click=lambda: ui.open("/about"))
+            ui.button("Login", on_click=lambda: ui.navigate.to("/login"))
+        ui.button("About", on_click=lambda: ui.navigate.to("/about"))
         ui.link(
             f"Commit ID: {COMMIT_ID[:7]} {'' if IS_UP_TO_DATE else '⚠️ New update available.'}",
             f"https://github.com/timelessnesses/folderistic/commit/{COMMIT_ID}",
