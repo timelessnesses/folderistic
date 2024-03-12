@@ -9,12 +9,14 @@ import zipfile
 import asyncpg
 from nicegui import app, ui
 from nicegui.events import UploadEventArguments
+import fastapi
+import starlette.background
 
 from ..models import FileRecord, FolderRecord, UserRecord
 from .utils import CustomButtonBuilder, show_header
 
 
-def install(db: asyncpg.Pool):
+def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
     @ui.page("/folder/{folder_id}")
     async def get_contents(folder_id: str):
         async def a():
@@ -272,10 +274,9 @@ def install(db: asyncpg.Pool):
                 notification = ui.notification(timeout=None)
                 notification.spinner = True
                 notification.message = "Processing"
-                zipped = io.BytesIO()
                 # notification.message = "Initializing ZipFile In Memory"
                 with zipfile.ZipFile(
-                    zipped, "a", zipfile.ZIP_DEFLATED, False
+                    f"files/{folder_id}.zip", "w", zipfile.ZIP_LZMA, True
                 ) as zipper:
                     # notification.message = "Getting all files in the folder"
                     async with db.acquire() as d:
@@ -293,9 +294,8 @@ def install(db: asyncpg.Pool):
                         else:
                             file_name = file.name
                         zipper.write(file.path, file_name)
-                zipped.seek(0)
-                ui.download(zipped.read(), f"{folder[0].name} ({folder[0].id}).zip")
                 notification.message = "Sending download request"
+                ui.navigate.to(f"/folder/{folder_id}/zipped", True)
                 notification.spinner = True
                 notification.message = "Enjoy your download!"
                 notification.spinner = False
@@ -325,3 +325,7 @@ def install(db: asyncpg.Pool):
                         ):
                             ui.icon("description", size="md", color="darkorange")
                             ui.label(f"{f.name} (ID: {f.id})")
+    @fapp.get("/folder/{folder_id}/zipped")
+    async def get_zip(folder_id: uuid.UUID, bg_task: starlette.background.BackgroundTasks):
+        bg_task.add_task(lambda: os.remove(f"files/{str(folder_id)}.zip"))
+        return fastapi.responses.FileResponse(f"files/{str(folder_id)}.zip", filename=f"{str(folder_id)}.zip",)
