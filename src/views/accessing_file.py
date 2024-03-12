@@ -9,6 +9,7 @@ from nicegui import app, ui
 from ..models import FileRecord, FolderRecord, UserRecord
 from .utils import show_header
 
+
 async def get_file_id(db: asyncpg.Pool, folder_id: str, file_id: str):
     async with db.acquire() as d:
         file_path = (
@@ -24,13 +25,15 @@ async def get_file_id(db: asyncpg.Pool, folder_id: str, file_id: str):
         async with db.acquire() as d:
             await d.execute("DELETE FROM files WHERE id = $1", file_id)
         ui.navigate.to(f"/folder/{folder_id}")
-        
+
+
 async def delete_file(db: asyncpg.Pool, folder_id: str, file: FileRecord):
     os.remove(file.path)
     async with db.acquire() as d:
         await d.execute("DELETE FROM files WHERE id = $1", file.id)
     ui.notify("Successfully deleted a file!")
     ui.timer(5, lambda: ui.navigate.to(f"/folder/{folder_id}"))
+
 
 def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
     @ui.page("/folder/{folder_id}/{file_id}")
@@ -83,10 +86,14 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
                         )
 
                     ui.button(
-                        f"Download ({await get_file_id(db, folder_id, file.id)})", on_click=download
+                        f"Download ({await get_file_id(db, folder_id, file.id)})",
+                        on_click=download,
                     )
                     ui.button(
-                        f"View", on_click=lambda: ui.navigate.to(f"/folder/{folder_id}/{file_id}/view", True)
+                        f"View",
+                        on_click=lambda: ui.navigate.to(
+                            f"/folder/{folder_id}/{file_id}/view", True
+                        ),
                     ).props("color=pink")
                     user = (
                         await d.fetch(
@@ -115,11 +122,9 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
                 )
             )[0]
             return fastapi.responses.FileResponse(file.path, filename=file.name)
-        
+
     @fapp.get("/folder/{folder_id}/{file_id}/view")
-    async def viewery(
-        folder_id: str, file_id: str
-    ) -> fastapi.responses.FileResponse:
+    async def viewery(folder_id: str, file_id: str) -> fastapi.responses.FileResponse:
         async with db.acquire() as d:
             file = (
                 await d.fetch(
@@ -129,4 +134,6 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
                     record_class=FileRecord,
                 )
             )[0]
-            return fastapi.responses.FileResponse(file.path, filename=file.name, content_disposition_type="inline")
+            return fastapi.responses.FileResponse(
+                file.path, filename=file.name, content_disposition_type="inline"
+            )

@@ -7,13 +7,14 @@ import uuid
 import zipfile
 
 import asyncpg
-from nicegui import app, ui
-from nicegui.events import UploadEventArguments
 import fastapi
 import starlette.background
+from nicegui import app, ui
+from nicegui.events import UploadEventArguments
 
 from ..models import FileRecord, FolderRecord, UserRecord
 from .utils import CustomButtonBuilder, show_header
+
 
 async def create_folders(folders: str):
     try:
@@ -24,6 +25,7 @@ async def create_folders(folders: str):
         os.mkdir(folders)
     except FileExistsError:
         pass
+
 
 def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
     @ui.page("/folder/{folder_id}")
@@ -326,7 +328,13 @@ def install(fapp: fastapi.FastAPI, db: asyncpg.Pool):
                         ):
                             ui.icon("description", size="md", color="darkorange")
                             ui.label(f"{f.name} (ID: {f.id})")
+
     @fapp.get("/folder/{folder_id}/zipped")
-    async def get_zip(folder_id: uuid.UUID, bg_task: starlette.background.BackgroundTasks):
+    async def get_zip(
+        folder_id: uuid.UUID, bg_task: starlette.background.BackgroundTasks
+    ):
         bg_task.add_task(lambda: os.remove(f"files/{str(folder_id)}.zip"))
-        return fastapi.responses.FileResponse(f"files/{str(folder_id)}.zip", filename=f"{str(folder_id)}.zip",)
+        return fastapi.responses.FileResponse(
+            f"files/{str(folder_id)}.zip",
+            filename=f"{str(folder_id)}.zip",
+        )
