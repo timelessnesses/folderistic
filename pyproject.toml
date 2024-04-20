@@ -23,12 +23,12 @@ prometheus-client = "^0.20.0"
 starlette-exporter = "^0.21.0"
 gc-prometheus = "^0.1.0"
 requests = "^2.31.0"
-aiohttp = "^3.9.3"
+aiohttp = "^3.9.4"
 
 
 [tool.poetry.group.dev.dependencies]
 isort = "^5.13.2"
-black = "^24.2.0"
+black = "^24.3.0"
 
 [build-system]
 requires = ["poetry-core"]
