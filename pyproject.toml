@@ -24,6 +24,10 @@ starlette-exporter = "^0.21.0"
 gc-prometheus = "^0.1.0"
 requests = "^2.31.0"
 aiohttp = "^3.9.4"
+logfire = {extras = ["system-metrics"], version = "^0.32.0"}
+opentelemetry-instrumentation-fastapi = "^0.45b0"
+opentelemetry-instrumentation-asyncpg = "^0.45b0"
+opentelemetry-instrumentation-asyncio = "^0.45b0"
 
 
 [tool.poetry.group.dev.dependencies]
