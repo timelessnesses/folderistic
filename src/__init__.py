@@ -12,51 +12,50 @@ from dotenv import load_dotenv
 from nicegui import Client, app, ui
 from prometheus_fastapi_instrumentator import Instrumentator, metrics
 from prometheus_fastapi_instrumentator.metrics import Info
+import logfire
 
 load_dotenv()
-import logging
 import os
 
 from . import middlewares
+from .initialize_telemetry import initialize_telemetry
 from .views import install
 from .views.utils import db_ping
 
 db = asyncpg.create_pool(host=os.getenv("FOLDERISTIC_HOST"), user=os.getenv("FOLDERISTIC_USER"), password=os.getenv("FOLDERISTIC_PASS"), database=os.getenv("FOLDERISTIC_DB"))  # type: ignore
 initialized_db = False
 
-
 @app.on_startup
 async def ls():
-    g = logging.getLogger("uvicorn.error")
     global db, initialized_db
-    if not initialized_db:
-        try:
-            a = await db
-            assert a is not None
-            db = a
-        except:
-            pass
-        finally:
-            initialized_db = True
-    install(app, db)
-    if db is None:
-        raise Exception("pool is none?")
-    g.info("Connected to database")
+    with logfire.span("Connecting to database"):
+        if not initialized_db:
+            try:
+                a = await db
+                assert a is not None
+                db = a
+            except:
+                pass
+            finally:
+                initialized_db = True
+        install(app, db)
+    logfire.info("Connected to database successfully")
     with open("./src/types.sql") as s:
         try:
             await db.execute(s.read())  # type: ignore
         except:
             pass
         finally:
-            g.info("Executed types statements")
+            logfire.info("Executed types statements")
     with open("./src/start.sql") as s:
         await db.execute(s.read())  # type: ignore
-        g.info("Executed starter statements")
+        logfire.info("Executed starter statements")
 
 
 @app.on_shutdown
 async def die():
     if not initialized_db:
+        logfire.info("Closing database")
         await db.close()
 
 
@@ -68,7 +67,9 @@ except FileNotFoundError:
     with open("./SECRET.uuid4", "w") as fp:
         fp.write(secret)
 app.add_middleware(middlewares.auth.AuthMiddleWare, database=db)
+logfire.info("Added authentication middleware")
 app.add_middleware(starlette_exporter.middleware.PrometheusMiddleware)
+logfire.info("Added prometheus middleware")
 
 
 def db_latency():
@@ -162,8 +163,9 @@ def thingy(app: fastapi.FastAPI):
 
     prometheus.instrument(app)
     prometheus.expose(app)
-
+    
     app.add_route("/metrics-starlette", starlette_exporter.handle_metrics)
+    initialize_telemetry(app)
 
 
 thingy(app)
@@ -174,3 +176,4 @@ ui.run_with(
     storage_secret=secret,
     favicon="./favicon.ico",
 )
+logfire.configure(console=False,send_to_logfire='if-token-present', collect_system_metrics=True, service_name="folderistic-main", project_name="folderistic", inspect_arguments=True, )
