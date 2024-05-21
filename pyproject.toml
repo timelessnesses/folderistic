@@ -22,7 +22,7 @@ prometheus-fastapi-instrumentator = "^7.0.0"
 prometheus-client = "^0.20.0"
 starlette-exporter = "^0.21.0"
 gc-prometheus = "^0.1.0"
-requests = "^2.31.0"
+requests = "^2.32.0"
 aiohttp = "^3.9.5"
 
 
