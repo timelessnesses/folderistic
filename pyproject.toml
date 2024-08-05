@@ -28,7 +28,7 @@ aiohttp = "^3.9.5"
 
 [tool.poetry.group.dev.dependencies]
 isort = "^5.13.2"
-black = "^24.3.0"
+black = "^24.8.0"
 
 [build-system]
 requires = ["poetry-core"]
