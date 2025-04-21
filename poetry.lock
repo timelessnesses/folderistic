@@ -779,13 +779,13 @@ files = [
 
 [[package]]
 name = "jinja2"
-version = "3.1.3"
+version = "3.1.4"
 description = "A very fast and expressive template engine."
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "Jinja2-3.1.3-py3-none-any.whl", hash = "sha256:7d6d50dd97d52cbc355597bd845fabfbac3f551e1f99619e39a35ce8c370b5fa"},
-    {file = "Jinja2-3.1.3.tar.gz", hash = "sha256:ac8bd6544d4bb2c9792bf3a159e80bba8fda7f07e81bc3aed565432d5925ba90"},
+    {file = "jinja2-3.1.4-py3-none-any.whl", hash = "sha256:bc5dd2abb727a5319567b7a813e6a2e7318c39f4f487cfe6c89c6f9c7d25197d"},
+    {file = "jinja2-3.1.4.tar.gz", hash = "sha256:4a3aee7acbbe7303aede8e9648d13b8bf88a429282aa6122a993f0ac800cb369"},
 ]
 
 [package.dependencies]
@@ -991,13 +991,13 @@ files = [
 
 [[package]]
 name = "nicegui"
-version = "1.4.24"
+version = "1.4.25"
 description = "Create web-based user interfaces with Python. The nice way."
 optional = false
 python-versions = "<4.0,>=3.8"
 files = [
-    {file = "nicegui-1.4.24-py3-none-any.whl", hash = "sha256:13273ace7c729369c5c716be8c2fdd15a7e61df1c53a22ad54910372bf946dae"},
-    {file = "nicegui-1.4.24.tar.gz", hash = "sha256:6a66200252203d449f7edea6dbddcdffd6bf7406800dba3d8961129ce1f036d1"},
+    {file = "nicegui-1.4.25-py3-none-any.whl", hash = "sha256:27b5b657cba020d6eadaaea06a364907352ea7ad8f7424b33317bd2f35867767"},
+    {file = "nicegui-1.4.25.tar.gz", hash = "sha256:545585ed148b86dd079175c3cc0d9dcc3c4b1516dc113a976673cbbc15c27e8c"},
 ]
 
 [package.dependencies]
@@ -1008,7 +1008,7 @@ fastapi = ">=0.109.1,<0.110.0"
 httpx = ">=0.24.0"
 ifaddr = ">=0.2.0"
 itsdangerous = ">=2.1.2,<3.0.0"
-jinja2 = ">=3.1.3,<4.0.0"
+jinja2 = ">=3.1.4,<4.0.0"
 markdown2 = ">=2.4.7,<2.4.11 || >2.4.11"
 orjson = {version = ">=3.9.15", markers = "platform_machine != \"i386\" and platform_machine != \"i686\""}
 Pygments = ">=2.15.1,<3.0.0"
@@ -1923,4 +1923,4 @@ multidict = ">=4.0"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "59857e60abb9d979344d03ea31a1b658629f3f2f64178fee75c86ce123fbba84"
+content-hash = "2990c467482cdc7d66adc5d0875b43c4b7f6137833f61fe4c29e4199fc7fb54c"
